@@ -38,8 +38,8 @@ export default function ReceiptSection({
   const activeReceipt = receiptMeta[receiptStatus];
 
   return (
-    <div className="mb-10 border border-gray-200 rounded-md overflow-hidden">
-      <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+    <div className="mb-5 border border-gray-200 rounded-md overflow-hidden">
+      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
         <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
           Kwitansi Pembayaran
         </h3>
@@ -50,10 +50,10 @@ export default function ReceiptSection({
         </span>
       </div>
 
-      <div className="px-4 py-3">
+      <div className="px-3 py-2">
         <div className="flex justify-between items-center py-1">
-          <span className="text-sm text-gray-600">Nominal Diterima</span>
-          <span className="text-base font-bold text-gray-900">
+          <span className="text-xs text-gray-600">Nominal Diterima</span>
+          <span className="text-sm font-bold text-gray-900">
             {formatCurrency(activeReceipt.amount)}
           </span>
         </div>

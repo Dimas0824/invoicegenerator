@@ -273,7 +273,7 @@ export default function InvoiceGenerator() {
 
   return (
     <div
-      className="min-h-screen bg-gray-200 font-sans p-4 flex flex-col items-center"
+      className="min-h-screen bg-gray-200 font-sans p-3 flex flex-col items-center"
       style={PDF_SAFE_TAILWIND_COLOR_VARS}
     >
       <Toolbar
@@ -297,11 +297,11 @@ export default function InvoiceGenerator() {
         <div
           ref={contentRef}
           id="invoice-content"
-          className="bg-white shadow-2xl print:shadow-none relative box-border text-slate-900"
+          className="bg-white shadow-2xl print:shadow-none relative box-border text-slate-900 leading-tight"
           style={{
             width: "210mm",
             minHeight: "297mm",
-            padding: "15mm 20mm",
+            padding: "10mm 12mm",
             flexShrink: 0,
           }}
         >
@@ -317,6 +317,7 @@ export default function InvoiceGenerator() {
             buyerName={invoice.buyerName}
             date={invoice.date}
             paymentMethod={invoice.paymentMethod}
+            bankName={invoice.bankName}
             accountNumber={invoice.accountNumber}
             recipientName={invoice.recipientName}
             isEditing={isEditing}
@@ -324,6 +325,7 @@ export default function InvoiceGenerator() {
             onBuyerNameChange={(value) => updateField("buyerName", value)}
             onDateChange={(value) => updateField("date", value)}
             onPaymentMethodChange={(value) => updateField("paymentMethod", value)}
+            onBankNameChange={(value) => updateField("bankName", value)}
             onAccountNumberChange={(value) => updateField("accountNumber", value)}
             onRecipientNameChange={(value) => updateField("recipientName", value)}
           />
@@ -391,7 +393,7 @@ export default function InvoiceGenerator() {
             width: 210mm !important;
             min-height: 297mm !important;
             margin: 0 !important;
-            padding: 15mm 20mm !important;
+            padding: 10mm 12mm !important;
             page-break-after: avoid;
           }
         }

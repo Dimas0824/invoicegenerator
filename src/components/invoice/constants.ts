@@ -11,6 +11,7 @@ export const INITIAL_INVOICE_STATE: InvoiceData = {
   sellerPhone: "0812-3456-7890",
   buyerName: "Maowieee",
   paymentMethod: "Transfer",
+  bankName: "BCA",
   showReceipt: false,
   receiptStatus: "Termin Pertama",
   accountNumber: "1234-567-890",
@@ -44,6 +45,7 @@ export const INITIAL_INVOICE_STATE: InvoiceData = {
 };
 
 export const PAYMENT_METHOD_OPTIONS = ["Transfer", "E-Wallet", "QRIS"] as const;
+export const BANK_OPTIONS = ["BCA", "BNI", "BRI", "Mandiri", "CIMB Niaga"] as const;
 export const RECEIPT_STATUS_OPTIONS = [
   "Termin Pertama",
   "Termin Kedua",

@@ -1,4 +1,5 @@
 export type PaymentMethod = "Transfer" | "E-Wallet" | "QRIS";
+export type BankName = "BCA" | "BNI" | "BRI" | "Mandiri" | "CIMB Niaga";
 export type ReceiptStatus = "Termin Pertama" | "Termin Kedua" | "Full";
 
 export type DpType = "percent" | "fixed";
@@ -22,6 +23,7 @@ export interface InvoiceData {
   sellerPhone: string;
   buyerName: string;
   paymentMethod: PaymentMethod;
+  bankName: BankName;
   showReceipt: boolean;
   receiptStatus: ReceiptStatus;
   accountNumber: string;

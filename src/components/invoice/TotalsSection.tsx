@@ -18,22 +18,22 @@ export default function TotalsSection({
   onDpValueChange,
 }: TotalsSectionProps) {
   return (
-    <div className="flex justify-end mb-12">
-      <div className="w-1/2">
-        <div className="flex justify-between items-center py-2 border-b border-gray-200 text-sm">
+    <div className="flex justify-end mb-6">
+      <div className="w-[46%]">
+        <div className="flex justify-between items-center py-1.5 border-b border-gray-200 text-xs">
           <span className="font-medium text-gray-600">Total Biaya Project</span>
           <span className="font-bold text-gray-900">{formatCurrency(subtotal)}</span>
         </div>
 
-        <div className="flex justify-between items-center py-2 border-b border-gray-200 bg-blue-50 px-3 -mx-3 my-2 rounded-sm">
+        <div className="flex justify-between items-center py-1.5 border-b border-gray-200 bg-blue-50 px-2 -mx-2 my-1.5 rounded-sm">
           <div className="flex flex-col">
-            <span className="font-bold text-sm text-gray-800">DP (Uang Muka)</span>
+            <span className="font-bold text-xs text-gray-800">DP (Uang Muka)</span>
             <span className="text-[10px] text-blue-600 italic mt-0.5">
               *Pembayaran awal untuk mulai pengerjaan
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-xs">
             {isEditing ? (
               <div className="flex items-center gap-1 mr-1 print:hidden bg-white rounded px-1 border border-blue-200">
                 <input
@@ -52,11 +52,11 @@ export default function TotalsSection({
           </div>
         </div>
 
-        <div className="flex justify-between items-center py-3 border-t-2 border-gray-800">
-          <span className="font-bold text-base text-gray-800">
+        <div className="flex justify-between items-center py-2 border-t-2 border-gray-800">
+          <span className="font-bold text-sm text-gray-800">
             Pelunasan (Saat Selesai)
           </span>
-          <span className="font-bold text-xl text-red-600">
+          <span className="font-bold text-lg text-red-600">
             {formatCurrency(balance)}
           </span>
         </div>

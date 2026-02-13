@@ -20,26 +20,26 @@ export default function ItemsTable({
   onRemoveItem,
 }: ItemsTableProps) {
   return (
-    <div className="mb-8">
+    <div className="mb-5">
       <table className="w-full border-collapse">
         <thead>
           <tr className="bg-slate-800 text-white">
-            <th className="py-2 px-2 text-center text-[10px] uppercase font-bold w-12 rounded-tl-md">
+            <th className="py-1.5 px-2 text-center text-[10px] uppercase font-bold w-10 rounded-tl-md">
               No
             </th>
-            <th className="py-2 px-4 text-left text-[10px] uppercase font-bold">
+            <th className="py-1.5 px-3 text-left text-[10px] uppercase font-bold">
               Deskripsi Pekerjaan
             </th>
-            <th className="py-2 px-2 text-center text-[10px] uppercase font-bold w-16">
+            <th className="py-1.5 px-2 text-center text-[10px] uppercase font-bold w-14">
               Qty
             </th>
-            <th className="py-2 px-2 text-right text-[10px] uppercase font-bold w-32">
+            <th className="py-1.5 px-2 text-right text-[10px] uppercase font-bold w-28">
               Harga Satuan
             </th>
-            <th className="py-2 px-4 text-right text-[10px] uppercase font-bold w-32 rounded-tr-md">
+            <th className="py-1.5 px-3 text-right text-[10px] uppercase font-bold w-28 rounded-tr-md">
               Total
             </th>
-            <th className="py-2 w-8 print:hidden bg-slate-800"></th>
+            <th className="py-1.5 w-8 print:hidden bg-slate-800"></th>
           </tr>
         </thead>
 
@@ -47,13 +47,13 @@ export default function ItemsTable({
           {items.map((item, index) => (
             <tr
               key={item.id}
-              className="border-b border-gray-200 align-top text-sm hover:bg-gray-50"
+              className="border-b border-gray-200 align-top text-xs hover:bg-gray-50"
             >
-              <td className="py-3 px-2 text-center text-gray-500 font-medium">
+              <td className="py-2 px-2 text-center text-gray-500 font-medium">
                 {index + 1}
               </td>
 
-              <td className="py-3 px-4">
+              <td className="py-2 px-3">
                 {isEditing ? (
                   <div className="flex flex-col gap-1">
                     <input
@@ -72,7 +72,7 @@ export default function ItemsTable({
                         onItemChange(item.id, "details", event.target.value)
                       }
                       className="text-xs text-gray-600 w-full outline-none border border-dashed border-gray-300 p-1 rounded resize-none focus:border-blue-500 bg-transparent"
-                      rows={2}
+                      rows={1}
                       placeholder="Detail..."
                     />
                   </div>
@@ -88,7 +88,7 @@ export default function ItemsTable({
                 )}
               </td>
 
-              <td className="py-3 px-2 text-center">
+              <td className="py-2 px-2 text-center">
                 {isEditing ? (
                   <input
                     type="number"
@@ -100,14 +100,14 @@ export default function ItemsTable({
                         Number.parseInt(event.target.value, 10) || 0,
                       )
                     }
-                    className="w-12 text-center outline-none border border-gray-300 rounded focus:border-blue-500 p-1"
+                    className="w-10 text-center outline-none border border-gray-300 rounded focus:border-blue-500 p-1"
                   />
                 ) : (
                   item.quantity
                 )}
               </td>
 
-              <td className="py-3 px-2 text-right text-gray-600 whitespace-nowrap">
+              <td className="py-2 px-2 text-right text-gray-600 whitespace-nowrap">
                 {isEditing ? (
                   <input
                     type="number"
@@ -119,18 +119,18 @@ export default function ItemsTable({
                         Number.parseInt(event.target.value, 10) || 0,
                       )
                     }
-                    className="w-24 text-right outline-none border border-gray-300 rounded focus:border-blue-500 p-1"
+                    className="w-20 text-right outline-none border border-gray-300 rounded focus:border-blue-500 p-1"
                   />
                 ) : (
                   formatCurrency(item.price)
                 )}
               </td>
 
-              <td className="py-3 px-4 text-right font-bold text-gray-900 whitespace-nowrap">
+              <td className="py-2 px-3 text-right font-bold text-gray-900 whitespace-nowrap">
                 {formatCurrency(item.quantity * item.price)}
               </td>
 
-              <td className="py-3 text-center align-middle print:hidden">
+              <td className="py-2 text-center align-middle print:hidden">
                 {isEditing ? (
                   <button
                     onClick={() => onRemoveItem(item.id)}
