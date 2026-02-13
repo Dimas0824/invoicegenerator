@@ -1,6 +1,8 @@
 export type PaymentMethod = "Transfer" | "E-Wallet" | "QRIS";
 export type BankName = "BCA" | "BNI" | "BRI" | "Mandiri" | "CIMB Niaga";
 export type ReceiptStatus = "Termin Pertama" | "Termin Kedua" | "Full";
+export type PaperSize = "A5" | "A4" | "A3" | "Letter" | "Legal";
+export type PageOrientation = "portrait" | "landscape";
 
 export type DpType = "percent" | "fixed";
 

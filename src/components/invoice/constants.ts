@@ -51,3 +51,5 @@ export const RECEIPT_STATUS_OPTIONS = [
   "Termin Kedua",
   "Full",
 ] as const;
+export const PAPER_SIZE_OPTIONS = ["A5", "A4", "A3", "Letter", "Legal"] as const;
+export const PAGE_ORIENTATION_OPTIONS = ["portrait", "landscape"] as const;

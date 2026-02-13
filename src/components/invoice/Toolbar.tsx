@@ -1,16 +1,25 @@
 import { Download, Printer } from "lucide-react";
-import { RECEIPT_STATUS_OPTIONS } from "./constants";
-import type { ReceiptStatus } from "./types";
+import {
+  PAGE_ORIENTATION_OPTIONS,
+  PAPER_SIZE_OPTIONS,
+  RECEIPT_STATUS_OPTIONS,
+} from "./constants";
+import type { PageOrientation, PaperSize, ReceiptStatus } from "./types";
 
 type ToolbarProps = {
   isEditing: boolean;
   isGenerating: boolean;
   showReceipt: boolean;
   receiptStatus: ReceiptStatus;
+  paperSize: PaperSize;
+  pageOrientation: PageOrientation;
+  toolbarWidthMm: number;
   onResetDp: () => void;
   onToggleEdit: () => void;
   onToggleReceipt: () => void;
   onReceiptStatusChange: (value: ReceiptStatus) => void;
+  onPaperSizeChange: (value: PaperSize) => void;
+  onPageOrientationChange: (value: PageOrientation) => void;
   onManualPrint: () => void;
   onDownloadPdf: () => void;
 };
@@ -20,15 +29,23 @@ export default function Toolbar({
   isGenerating,
   showReceipt,
   receiptStatus,
+  paperSize,
+  pageOrientation,
+  toolbarWidthMm,
   onResetDp,
   onToggleEdit,
   onToggleReceipt,
   onReceiptStatusChange,
+  onPaperSizeChange,
+  onPageOrientationChange,
   onManualPrint,
   onDownloadPdf,
 }: ToolbarProps) {
   return (
-    <div className="w-full max-w-[210mm] mb-6 flex flex-wrap justify-between items-center print:hidden bg-white p-4 rounded-lg shadow-md gap-4 sticky top-4 z-50 border border-gray-300">
+    <div
+      className="w-full mb-6 flex flex-wrap justify-between items-center print:hidden bg-white p-4 rounded-lg shadow-md gap-4 sticky top-4 z-50 border border-gray-300"
+      style={{ maxWidth: `${toolbarWidthMm}mm` }}
+    >
       <div>
         <h1 className="text-lg font-bold text-gray-800">Invoice Generator</h1>
         <p className="text-xs text-gray-500">
@@ -90,6 +107,38 @@ export default function Toolbar({
               ))}
             </select>
           ) : null}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <select
+            value={paperSize}
+            onChange={(event) => onPaperSizeChange(event.target.value as PaperSize)}
+            disabled={isGenerating}
+            className="px-2 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded outline-none focus:border-blue-500 disabled:bg-gray-100"
+            title="Ukuran Kertas"
+          >
+            {PAPER_SIZE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                Kertas: {option}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={pageOrientation}
+            onChange={(event) =>
+              onPageOrientationChange(event.target.value as PageOrientation)
+            }
+            disabled={isGenerating}
+            className="px-2 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded outline-none focus:border-blue-500 disabled:bg-gray-100"
+            title="Orientasi Kertas"
+          >
+            {PAGE_ORIENTATION_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option === "portrait" ? "Portrait" : "Landscape"}
+              </option>
+            ))}
+          </select>
         </div>
 
         <button

@@ -11,7 +11,12 @@ import ItemsTable from "./ItemsTable";
 import ReceiptSection from "./ReceiptSection";
 import Toolbar from "./Toolbar";
 import TotalsSection from "./TotalsSection";
-import type { InvoiceData, InvoiceItemChangeHandler } from "./types";
+import type {
+  InvoiceData,
+  InvoiceItemChangeHandler,
+  PageOrientation,
+  PaperSize,
+} from "./types";
 import {
   calculateBalance,
   calculateDP,
@@ -20,22 +25,9 @@ import {
   formatDate,
 } from "./utils";
 
-const PDF_SAFE_STYLE_PROPS = [
-  "color",
-  "background-color",
-  "border-top-color",
-  "border-right-color",
-  "border-bottom-color",
-  "border-left-color",
-  "outline-color",
-  "text-decoration-color",
-  "column-rule-color",
-  "caret-color",
-  "fill",
-  "stroke",
-  "box-shadow",
-  "text-shadow",
-] as const;
+const UNSUPPORTED_COLOR_FUNCTION_PATTERN =
+  /\b(?:lab|lch|oklab|oklch|color)\(/i;
+const OUTPUT_SAFE_SCALE_MARGIN = 0.97;
 
 type CssVarStyle = CSSProperties & Record<`--${string}`, string>;
 
@@ -64,6 +56,21 @@ const PDF_SAFE_TAILWIND_COLOR_VARS: CssVarStyle = {
   "--color-slate-900": "#0f172a",
 };
 
+const PAGE_SIZE_DIMENSIONS: Record<
+  PaperSize,
+  {
+    widthMm: number;
+    heightMm: number;
+    jsPdfFormat: "a5" | "a4" | "a3" | "letter" | "legal";
+  }
+> = {
+  A5: { widthMm: 148, heightMm: 210, jsPdfFormat: "a5" },
+  A4: { widthMm: 210, heightMm: 297, jsPdfFormat: "a4" },
+  A3: { widthMm: 297, heightMm: 420, jsPdfFormat: "a3" },
+  Letter: { widthMm: 216, heightMm: 279, jsPdfFormat: "letter" },
+  Legal: { widthMm: 216, heightMm: 356, jsPdfFormat: "legal" },
+};
+
 function syncComputedStylesForPdf(
   sourceRoot: HTMLElement,
   cloneRoot: HTMLElement,
@@ -82,13 +89,83 @@ function syncComputedStylesForPdf(
     const sourceStyle = window.getComputedStyle(sourceNodes[index]);
     const targetStyle = cloneNodes[index].style;
 
-    for (const styleProp of PDF_SAFE_STYLE_PROPS) {
+    for (const styleProp of Array.from(sourceStyle)) {
+      if (styleProp.startsWith("--")) {
+        continue;
+      }
+
       const computedValue = sourceStyle.getPropertyValue(styleProp);
-      if (computedValue) {
+      if (!computedValue || UNSUPPORTED_COLOR_FUNCTION_PATTERN.test(computedValue)) {
+        continue;
+      }
+
+      const priority = sourceStyle.getPropertyPriority(styleProp);
+      if (priority) {
+        targetStyle.setProperty(styleProp, computedValue, priority);
+      } else {
         targetStyle.setProperty(styleProp, computedValue);
       }
     }
   }
+}
+
+function stripStylesheetsInClone(clonedDocument: Document): void {
+  const styleNodes = clonedDocument.querySelectorAll('style, link[rel="stylesheet"]');
+  styleNodes.forEach((node) => node.remove());
+}
+
+function getAutoScaleForOutput(
+  element: HTMLElement,
+  pageWidthMm: number,
+  pageHeightMm: number,
+): number {
+  const elementWidthPx = element.getBoundingClientRect().width;
+  const pxPerMm = elementWidthPx / pageWidthMm;
+  const pageHeightPx = pageHeightMm * pxPerMm;
+  const heightScale = pageHeightPx / element.scrollHeight;
+  const nextScale = Math.min(1, heightScale * OUTPUT_SAFE_SCALE_MARGIN);
+
+  if (!Number.isFinite(nextScale) || nextScale <= 0) {
+    return 1;
+  }
+
+  return nextScale;
+}
+
+function applyTemporaryScaleForOutput(
+  element: HTMLElement,
+  scale: number,
+): () => void {
+  if (scale >= 0.999) {
+    return () => {};
+  }
+
+  const previousTransform = element.style.transform;
+  const previousTransformOrigin = element.style.transformOrigin;
+  const previousHeight = element.style.height;
+  const previousMinHeight = element.style.minHeight;
+  const previousOverflow = element.style.overflow;
+  const previousMarginLeft = element.style.marginLeft;
+  const previousMarginRight = element.style.marginRight;
+  const scaledHeight = element.scrollHeight * scale;
+
+  element.style.transformOrigin = "top center";
+  element.style.transform = `scale(${scale})`;
+  element.style.height = `${scaledHeight}px`;
+  element.style.minHeight = `${scaledHeight}px`;
+  element.style.overflow = "hidden";
+  element.style.marginLeft = "auto";
+  element.style.marginRight = "auto";
+
+  return () => {
+    element.style.transform = previousTransform;
+    element.style.transformOrigin = previousTransformOrigin;
+    element.style.height = previousHeight;
+    element.style.minHeight = previousMinHeight;
+    element.style.overflow = previousOverflow;
+    element.style.marginLeft = previousMarginLeft;
+    element.style.marginRight = previousMarginRight;
+  };
 }
 
 export default function InvoiceGenerator() {
@@ -96,6 +173,8 @@ export default function InvoiceGenerator() {
   const [isEditing, setIsEditing] = useState(true);
   const [isPdfReady, setIsPdfReady] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [paperSize, setPaperSize] = useState<PaperSize>("A4");
+  const [pageOrientation, setPageOrientation] = useState<PageOrientation>("portrait");
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -149,6 +228,23 @@ export default function InvoiceGenerator() {
   const formatCurrencyValue = (amount: number): string => {
     return formatCurrency(amount, invoice.currency);
   };
+
+  const pageLayout = useMemo(() => {
+    const base = PAGE_SIZE_DIMENSIONS[paperSize];
+    const isLandscape = pageOrientation === "landscape";
+    const widthMm = isLandscape ? base.heightMm : base.widthMm;
+    const heightMm = isLandscape ? base.widthMm : base.heightMm;
+    const horizontalPaddingMm = paperSize === "A5" ? 8 : 12;
+    const verticalPaddingMm = paperSize === "A5" ? 8 : 10;
+
+    return {
+      widthMm,
+      heightMm,
+      horizontalPaddingMm,
+      verticalPaddingMm,
+      jsPdfFormat: base.jsPdfFormat,
+    };
+  }, [paperSize, pageOrientation]);
 
   const updateField = <K extends keyof InvoiceData>(
     field: K,
@@ -223,6 +319,13 @@ export default function InvoiceGenerator() {
     setIsEditing(false);
 
     window.setTimeout(() => {
+      const outputScale = getAutoScaleForOutput(
+        element,
+        pageLayout.widthMm,
+        pageLayout.heightMm,
+      );
+      const restoreScaledStyle = applyTemporaryScaleForOutput(element, outputScale);
+
       const options = {
         margin: 0,
         filename: `Invoice-${invoice.orderId}.pdf`,
@@ -239,9 +342,14 @@ export default function InvoiceGenerator() {
             }
 
             syncComputedStylesForPdf(element, cloneElement);
+            stripStylesheetsInClone(clonedDocument);
           },
         },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        jsPDF: {
+          unit: "mm",
+          format: pageLayout.jsPdfFormat,
+          orientation: pageOrientation,
+        },
       };
 
       createPdf()
@@ -249,12 +357,14 @@ export default function InvoiceGenerator() {
         .from(element)
         .save()
         .then(() => {
+          restoreScaledStyle();
           setIsEditing(wasEditing);
           setIsGenerating(false);
         })
         .catch((error: unknown) => {
           console.error("PDF Error:", error);
           window.alert("Gagal download otomatis. Gunakan tombol Manual.");
+          restoreScaledStyle();
           setIsEditing(wasEditing);
           setIsGenerating(false);
         });
@@ -266,7 +376,21 @@ export default function InvoiceGenerator() {
     setIsEditing(false);
 
     window.setTimeout(() => {
+      const element = contentRef.current;
+      if (!element) {
+        window.alert("Konten invoice tidak ditemukan.");
+        setIsEditing(wasEditing);
+        return;
+      }
+
+      const outputScale = getAutoScaleForOutput(
+        element,
+        pageLayout.widthMm,
+        pageLayout.heightMm,
+      );
+      const restoreScaledStyle = applyTemporaryScaleForOutput(element, outputScale);
       window.print();
+      restoreScaledStyle();
       setIsEditing(wasEditing);
     }, 500);
   };
@@ -281,10 +405,15 @@ export default function InvoiceGenerator() {
         isGenerating={isGenerating}
         showReceipt={invoice.showReceipt}
         receiptStatus={invoice.receiptStatus}
+        paperSize={paperSize}
+        pageOrientation={pageOrientation}
+        toolbarWidthMm={pageLayout.widthMm}
         onResetDp={setDpTo30Percent}
         onToggleEdit={() => setIsEditing((prev) => !prev)}
         onToggleReceipt={() => updateField("showReceipt", !invoice.showReceipt)}
         onReceiptStatusChange={(value) => updateField("receiptStatus", value)}
+        onPaperSizeChange={(value) => setPaperSize(value)}
+        onPageOrientationChange={(value) => setPageOrientation(value)}
         onManualPrint={handleManualPrint}
         onDownloadPdf={handleDownloadPDF}
       />
@@ -299,9 +428,9 @@ export default function InvoiceGenerator() {
           id="invoice-content"
           className="bg-white shadow-2xl print:shadow-none relative box-border text-slate-900 leading-tight"
           style={{
-            width: "210mm",
-            minHeight: "297mm",
-            padding: "10mm 12mm",
+            width: `${pageLayout.widthMm}mm`,
+            minHeight: `${pageLayout.heightMm}mm`,
+            padding: `${pageLayout.verticalPaddingMm}mm ${pageLayout.horizontalPaddingMm}mm`,
             flexShrink: 0,
           }}
         >
@@ -375,7 +504,7 @@ export default function InvoiceGenerator() {
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
+            size: ${pageLayout.widthMm}mm ${pageLayout.heightMm}mm;
             margin: 0;
           }
 
@@ -390,10 +519,10 @@ export default function InvoiceGenerator() {
           .print\\:pb-0 { padding-bottom: 0 !important; }
 
           #invoice-content {
-            width: 210mm !important;
-            min-height: 297mm !important;
+            width: ${pageLayout.widthMm}mm !important;
+            min-height: ${pageLayout.heightMm}mm !important;
             margin: 0 !important;
-            padding: 10mm 12mm !important;
+            padding: ${pageLayout.verticalPaddingMm}mm ${pageLayout.horizontalPaddingMm}mm !important;
             page-break-after: avoid;
           }
         }
