@@ -2,6 +2,7 @@ import type { InvoiceData } from "./types";
 
 export const INITIAL_INVOICE_STATE: InvoiceData = {
   orderId: "WEB-DEV-1202",
+  invoiceTagline: "JASA PENGEMBANGAN WEB",
   date: "2026-02-12",
   location: "Malang",
   sellerName: "Jasa Web Developer",
@@ -10,6 +11,8 @@ export const INITIAL_INVOICE_STATE: InvoiceData = {
   sellerPhone: "0812-3456-7890",
   buyerName: "Maowieee",
   paymentMethod: "Transfer",
+  showReceipt: false,
+  receiptStatus: "Termin Pertama",
   accountNumber: "1234-567-890",
   recipientName: "AwiMawii",
   items: [
@@ -41,3 +44,8 @@ export const INITIAL_INVOICE_STATE: InvoiceData = {
 };
 
 export const PAYMENT_METHOD_OPTIONS = ["Transfer", "E-Wallet", "QRIS"] as const;
+export const RECEIPT_STATUS_OPTIONS = [
+  "Termin Pertama",
+  "Termin Kedua",
+  "Full",
+] as const;

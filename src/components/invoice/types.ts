@@ -1,4 +1,5 @@
 export type PaymentMethod = "Transfer" | "E-Wallet" | "QRIS";
+export type ReceiptStatus = "Termin Pertama" | "Termin Kedua" | "Full";
 
 export type DpType = "percent" | "fixed";
 
@@ -12,6 +13,7 @@ export interface InvoiceItem {
 
 export interface InvoiceData {
   orderId: string;
+  invoiceTagline: string;
   date: string;
   location: string;
   sellerName: string;
@@ -20,6 +22,8 @@ export interface InvoiceData {
   sellerPhone: string;
   buyerName: string;
   paymentMethod: PaymentMethod;
+  showReceipt: boolean;
+  receiptStatus: ReceiptStatus;
   accountNumber: string;
   recipientName: string;
   items: InvoiceItem[];

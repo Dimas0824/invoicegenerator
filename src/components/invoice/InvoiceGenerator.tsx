@@ -8,6 +8,7 @@ import InfoSection from "./InfoSection";
 import InvoiceFooter from "./InvoiceFooter";
 import InvoiceHeader from "./InvoiceHeader";
 import ItemsTable from "./ItemsTable";
+import ReceiptSection from "./ReceiptSection";
 import Toolbar from "./Toolbar";
 import TotalsSection from "./TotalsSection";
 import type { InvoiceData, InvoiceItemChangeHandler } from "./types";
@@ -278,8 +279,12 @@ export default function InvoiceGenerator() {
       <Toolbar
         isEditing={isEditing}
         isGenerating={isGenerating}
+        showReceipt={invoice.showReceipt}
+        receiptStatus={invoice.receiptStatus}
         onResetDp={setDpTo30Percent}
         onToggleEdit={() => setIsEditing((prev) => !prev)}
+        onToggleReceipt={() => updateField("showReceipt", !invoice.showReceipt)}
+        onReceiptStatusChange={(value) => updateField("receiptStatus", value)}
         onManualPrint={handleManualPrint}
         onDownloadPdf={handleDownloadPDF}
       />
@@ -302,8 +307,10 @@ export default function InvoiceGenerator() {
         >
           <InvoiceHeader
             orderId={invoice.orderId}
+            tagline={invoice.invoiceTagline}
             isEditing={isEditing}
             onOrderIdChange={(value) => updateField("orderId", value)}
+            onTaglineChange={(value) => updateField("invoiceTagline", value)}
           />
 
           <InfoSection
@@ -339,6 +346,16 @@ export default function InvoiceGenerator() {
             formatCurrency={formatCurrencyValue}
             onDpValueChange={(value) => updateField("dpValue", value)}
           />
+
+          {invoice.showReceipt ? (
+            <ReceiptSection
+              receiptStatus={invoice.receiptStatus}
+              subtotal={subtotal}
+              dpAmount={dpAmount}
+              balance={balance}
+              formatCurrency={formatCurrencyValue}
+            />
+          ) : null}
 
           <InvoiceFooter
             location={invoice.location}
