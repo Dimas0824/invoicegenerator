@@ -15,10 +15,13 @@ export interface InvoiceData {
   date: string;
   location: string;
   sellerName: string;
+  signatureLabel: string;
   sellerContact: string;
   sellerPhone: string;
   buyerName: string;
   paymentMethod: PaymentMethod;
+  accountNumber: string;
+  recipientName: string;
   items: InvoiceItem[];
   dpType: DpType;
   dpValue: number;

@@ -5,22 +5,30 @@ type InfoSectionProps = {
   buyerName: string;
   date: string;
   paymentMethod: PaymentMethod;
+  accountNumber: string;
+  recipientName: string;
   isEditing: boolean;
   formatDate: (value: string) => string;
   onBuyerNameChange: (value: string) => void;
   onDateChange: (value: string) => void;
   onPaymentMethodChange: (value: PaymentMethod) => void;
+  onAccountNumberChange: (value: string) => void;
+  onRecipientNameChange: (value: string) => void;
 };
 
 export default function InfoSection({
   buyerName,
   date,
   paymentMethod,
+  accountNumber,
+  recipientName,
   isEditing,
   formatDate,
   onBuyerNameChange,
   onDateChange,
   onPaymentMethodChange,
+  onAccountNumberChange,
+  onRecipientNameChange,
 }: InfoSectionProps) {
   return (
     <div className="grid grid-cols-2 gap-8 mb-8">
@@ -93,6 +101,42 @@ export default function InfoSection({
               </select>
             ) : (
               <p className="text-sm font-medium text-gray-800">{paymentMethod}</p>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center">
+            <label className="text-[10px] text-gray-500 uppercase font-semibold">
+              Nomor Rekening
+            </label>
+
+            {isEditing ? (
+              <input
+                type="text"
+                name="accountNumber"
+                value={accountNumber}
+                onChange={(event) => onAccountNumberChange(event.target.value)}
+                className="text-sm font-medium text-gray-800 bg-white border border-gray-300 p-1 rounded focus:border-blue-500 outline-none w-40 text-right"
+              />
+            ) : (
+              <p className="text-sm font-medium text-gray-800">{accountNumber}</p>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center">
+            <label className="text-[10px] text-gray-500 uppercase font-semibold">
+              Nama Penerima
+            </label>
+
+            {isEditing ? (
+              <input
+                type="text"
+                name="recipientName"
+                value={recipientName}
+                onChange={(event) => onRecipientNameChange(event.target.value)}
+                className="text-sm font-medium text-gray-800 bg-white border border-gray-300 p-1 rounded focus:border-blue-500 outline-none w-40 text-right"
+              />
+            ) : (
+              <p className="text-sm font-medium text-gray-800">{recipientName}</p>
             )}
           </div>
         </div>

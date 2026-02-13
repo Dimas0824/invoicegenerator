@@ -5,10 +5,13 @@ export const INITIAL_INVOICE_STATE: InvoiceData = {
   date: "2026-02-12",
   location: "Malang",
   sellerName: "Jasa Web Developer",
+  signatureLabel: "Authorized Signature",
   sellerContact: "Admin Project",
   sellerPhone: "0812-3456-7890",
   buyerName: "Maowieee",
   paymentMethod: "Transfer",
+  accountNumber: "1234-567-890",
+  recipientName: "AwiMawii",
   items: [
     {
       id: 1,

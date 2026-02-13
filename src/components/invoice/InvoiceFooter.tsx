@@ -2,18 +2,22 @@ type InvoiceFooterProps = {
   location: string;
   date: string;
   sellerName: string;
+  signatureLabel: string;
   isEditing: boolean;
   formatDate: (value: string) => string;
   onLocationChange: (value: string) => void;
+  onSignatureLabelChange: (value: string) => void;
 };
 
 export default function InvoiceFooter({
   location,
   date,
   sellerName,
+  signatureLabel,
   isEditing,
   formatDate,
   onLocationChange,
+  onSignatureLabelChange,
 }: InvoiceFooterProps) {
   return (
     <div className="flex justify-between items-end mt-auto">
@@ -41,7 +45,16 @@ export default function InvoiceFooter({
         </div>
 
         <div className="font-medium text-gray-500 text-[10px] mt-1">
-          ( Authorized Signature )
+          {isEditing ? (
+            <input
+              name="signatureLabel"
+              value={signatureLabel}
+              onChange={(event) => onSignatureLabelChange(event.target.value)}
+              className="w-36 text-center border-b border-dashed border-gray-300 outline-none"
+            />
+          ) : (
+            `( ${signatureLabel} )`
+          )}
         </div>
       </div>
     </div>

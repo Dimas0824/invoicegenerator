@@ -310,11 +310,15 @@ export default function InvoiceGenerator() {
             buyerName={invoice.buyerName}
             date={invoice.date}
             paymentMethod={invoice.paymentMethod}
+            accountNumber={invoice.accountNumber}
+            recipientName={invoice.recipientName}
             isEditing={isEditing}
             formatDate={formatDate}
             onBuyerNameChange={(value) => updateField("buyerName", value)}
             onDateChange={(value) => updateField("date", value)}
             onPaymentMethodChange={(value) => updateField("paymentMethod", value)}
+            onAccountNumberChange={(value) => updateField("accountNumber", value)}
+            onRecipientNameChange={(value) => updateField("recipientName", value)}
           />
 
           <ItemsTable
@@ -340,9 +344,11 @@ export default function InvoiceGenerator() {
             location={invoice.location}
             date={invoice.date}
             sellerName={invoice.sellerName}
+            signatureLabel={invoice.signatureLabel}
             isEditing={isEditing}
             formatDate={formatDate}
             onLocationChange={(value) => updateField("location", value)}
+            onSignatureLabelChange={(value) => updateField("signatureLabel", value)}
           />
         </div>
       </div>
