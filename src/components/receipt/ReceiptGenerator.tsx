@@ -1,30 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { useRouter } from "next/navigation";
 
-import { INITIAL_INVOICE_STATE } from "./constants";
 import { useInvoiceSession } from "../../context/InvoiceSessionContext";
-import InfoSection from "./InfoSection";
-import InvoiceFooter from "./InvoiceFooter";
-import InvoiceHeader from "./InvoiceHeader";
-import ItemsTable from "./ItemsTable";
-import Toolbar from "./Toolbar";
-import TotalsSection from "./TotalsSection";
-import type {
-  InvoiceData,
-  InvoiceItemChangeHandler,
-  PageOrientation,
-  PaperSize,
-} from "./types";
-import {
-  calculateBalance,
-  calculateDP,
-  calculateSubtotal,
-  formatCurrency,
-  formatDate,
-} from "./utils";
+import { formatCurrency, formatDate } from "../invoice/utils";
+import { RECEIPT_PAGE_LAYOUT } from "./constants";
+import ReceiptDocument from "./ReceiptDocument";
+import ReceiptToolbar from "./ReceiptToolbar";
+import type { ReceiptDraftData } from "./types";
+import { buildReceiptData, createReceiptDraftFromInvoice } from "./utils";
 
 const UNSUPPORTED_COLOR_FUNCTION_PATTERN =
   /\b(?:lab|lch|oklab|oklch|color)\(/i;
@@ -38,38 +24,16 @@ const PDF_SAFE_TAILWIND_COLOR_VARS: CssVarStyle = {
   "--color-gray-100": "#f3f4f6",
   "--color-gray-200": "#e5e7eb",
   "--color-gray-300": "#d1d5db",
+  "--color-gray-400": "#9ca3af",
   "--color-gray-500": "#6b7280",
   "--color-gray-600": "#4b5563",
   "--color-gray-700": "#374151",
   "--color-gray-800": "#1f2937",
   "--color-gray-900": "#111827",
   "--color-blue-50": "#eff6ff",
-  "--color-blue-100": "#dbeafe",
   "--color-blue-200": "#bfdbfe",
   "--color-blue-500": "#3b82f6",
-  "--color-blue-600": "#2563eb",
-  "--color-blue-700": "#1d4ed8",
-  "--color-red-50": "#fef2f2",
-  "--color-red-400": "#f87171",
-  "--color-red-600": "#dc2626",
-  "--color-red-700": "#b91c1c",
   "--color-slate-800": "#1e293b",
-  "--color-slate-900": "#0f172a",
-};
-
-const PAGE_SIZE_DIMENSIONS: Record<
-  PaperSize,
-  {
-    widthMm: number;
-    heightMm: number;
-    jsPdfFormat: "a5" | "a4" | "a3" | "letter" | "legal";
-  }
-> = {
-  A5: { widthMm: 148, heightMm: 210, jsPdfFormat: "a5" },
-  A4: { widthMm: 210, heightMm: 297, jsPdfFormat: "a4" },
-  A3: { widthMm: 297, heightMm: 420, jsPdfFormat: "a3" },
-  Letter: { widthMm: 216, heightMm: 279, jsPdfFormat: "letter" },
-  Legal: { widthMm: 216, heightMm: 356, jsPdfFormat: "legal" },
 };
 
 function syncComputedStylesForPdf(
@@ -169,22 +133,24 @@ function applyTemporaryScaleForOutput(
   };
 }
 
-export default function InvoiceGenerator() {
+export default function ReceiptGenerator() {
   const router = useRouter();
-  const { invoiceDraft, setInvoiceDraft } = useInvoiceSession();
-  const [invoice, setInvoice] = useState<InvoiceData>(
-    () => invoiceDraft ?? INITIAL_INVOICE_STATE,
-  );
+  const { invoiceDraft } = useInvoiceSession();
   const [isEditing, setIsEditing] = useState(true);
   const [isPdfReady, setIsPdfReady] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [paperSize, setPaperSize] = useState<PaperSize>("A4");
-  const [pageOrientation, setPageOrientation] = useState<PageOrientation>("portrait");
+  const [receiptDraft, setReceiptDraft] = useState<ReceiptDraftData | null>(() =>
+    invoiceDraft ? createReceiptDraftFromInvoice(invoiceDraft) : null,
+  );
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setInvoiceDraft(invoice);
-  }, [invoice, setInvoiceDraft]);
+    if (!invoiceDraft || receiptDraft) {
+      return;
+    }
+
+    setReceiptDraft(createReceiptDraftFromInvoice(invoiceDraft));
+  }, [invoiceDraft, receiptDraft]);
 
   useEffect(() => {
     if (window.html2pdf) {
@@ -227,87 +193,47 @@ export default function InvoiceGenerator() {
     };
   }, []);
 
-  const subtotal = useMemo(() => calculateSubtotal(invoice.items), [invoice.items]);
-  const dpAmount = useMemo(
-    () => calculateDP(subtotal, invoice.dpType, invoice.dpValue),
-    [subtotal, invoice.dpType, invoice.dpValue],
-  );
-  const balance = useMemo(() => calculateBalance(subtotal, dpAmount), [subtotal, dpAmount]);
+  const receipt = useMemo(() => {
+    if (!invoiceDraft || !receiptDraft) {
+      return null;
+    }
 
-  const formatCurrencyValue = (amount: number): string => {
-    return formatCurrency(amount, invoice.currency);
-  };
+    return buildReceiptData(invoiceDraft, receiptDraft);
+  }, [invoiceDraft, receiptDraft]);
 
-  const pageLayout = useMemo(() => {
-    const base = PAGE_SIZE_DIMENSIONS[paperSize];
-    const isLandscape = pageOrientation === "landscape";
-    const widthMm = isLandscape ? base.heightMm : base.widthMm;
-    const heightMm = isLandscape ? base.widthMm : base.heightMm;
-    const horizontalPaddingMm = paperSize === "A5" ? 8 : 12;
-    const verticalPaddingMm = paperSize === "A5" ? 8 : 10;
+  const paymentInfo = useMemo(() => {
+    if (!invoiceDraft) {
+      return null;
+    }
 
     return {
-      widthMm,
-      heightMm,
-      horizontalPaddingMm,
-      verticalPaddingMm,
-      jsPdfFormat: base.jsPdfFormat,
+      orderId: invoiceDraft.orderId,
+      paymentMethod: invoiceDraft.paymentMethod,
+      bankName: invoiceDraft.bankName,
+      accountNumber: invoiceDraft.accountNumber,
+      recipientName: invoiceDraft.recipientName,
     };
-  }, [paperSize, pageOrientation]);
+  }, [invoiceDraft]);
 
-  const updateField = <K extends keyof InvoiceData>(
+  const formatCurrencyValue = (amount: number): string => {
+    const currency = receipt?.currency || invoiceDraft?.currency || "IDR";
+    return formatCurrency(amount, currency);
+  };
+
+  const updateField = <K extends keyof ReceiptDraftData>(
     field: K,
-    value: InvoiceData[K],
+    value: ReceiptDraftData[K],
   ): void => {
-    setInvoice((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+    setReceiptDraft((prev) => {
+      if (!prev) {
+        return prev;
+      }
 
-  const handleItemChange: InvoiceItemChangeHandler = (id, field, value) => {
-    setInvoice((prev) => ({
-      ...prev,
-      items: prev.items.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              [field]: value,
-            }
-          : item,
-      ),
-    }));
-  };
-
-  const addItem = () => {
-    setInvoice((prev) => ({
-      ...prev,
-      items: [
-        ...prev.items,
-        {
-          id: Date.now(),
-          title: "Item Baru",
-          details: "",
-          quantity: 1,
-          price: 0,
-        },
-      ],
-    }));
-  };
-
-  const removeItem = (id: number) => {
-    setInvoice((prev) => ({
-      ...prev,
-      items: prev.items.filter((item) => item.id !== id),
-    }));
-  };
-
-  const setDpTo30Percent = () => {
-    setInvoice((prev) => ({
-      ...prev,
-      dpType: "percent",
-      dpValue: 30,
-    }));
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
   };
 
   const handleDownloadPDF = () => {
@@ -318,8 +244,8 @@ export default function InvoiceGenerator() {
     }
 
     const element = contentRef.current;
-    if (!element) {
-      window.alert("Konten invoice tidak ditemukan.");
+    if (!element || !receipt) {
+      window.alert("Konten kwitansi tidak ditemukan.");
       return;
     }
 
@@ -330,14 +256,14 @@ export default function InvoiceGenerator() {
     window.setTimeout(() => {
       const outputScale = getAutoScaleForOutput(
         element,
-        pageLayout.widthMm,
-        pageLayout.heightMm,
+        RECEIPT_PAGE_LAYOUT.widthMm,
+        RECEIPT_PAGE_LAYOUT.heightMm,
       );
       const restoreScaledStyle = applyTemporaryScaleForOutput(element, outputScale);
 
       const options = {
         margin: 0,
-        filename: `Invoice-${invoice.orderId}.pdf`,
+        filename: `Kwitansi-${receipt.receiptNumber || "penerimaan-dana"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -345,7 +271,7 @@ export default function InvoiceGenerator() {
           scrollY: 0,
           scrollX: 0,
           onclone: (clonedDocument: Document) => {
-            const cloneElement = clonedDocument.getElementById("invoice-content");
+            const cloneElement = clonedDocument.getElementById("receipt-content");
             if (!(cloneElement instanceof HTMLElement)) {
               return;
             }
@@ -356,8 +282,8 @@ export default function InvoiceGenerator() {
         },
         jsPDF: {
           unit: "mm",
-          format: pageLayout.jsPdfFormat,
-          orientation: pageOrientation,
+          format: RECEIPT_PAGE_LAYOUT.jsPdfFormat,
+          orientation: "portrait",
         },
       };
 
@@ -387,15 +313,15 @@ export default function InvoiceGenerator() {
     window.setTimeout(() => {
       const element = contentRef.current;
       if (!element) {
-        window.alert("Konten invoice tidak ditemukan.");
+        window.alert("Konten kwitansi tidak ditemukan.");
         setIsEditing(wasEditing);
         return;
       }
 
       const outputScale = getAutoScaleForOutput(
         element,
-        pageLayout.widthMm,
-        pageLayout.heightMm,
+        RECEIPT_PAGE_LAYOUT.widthMm,
+        RECEIPT_PAGE_LAYOUT.heightMm,
       );
       const restoreScaledStyle = applyTemporaryScaleForOutput(element, outputScale);
       window.print();
@@ -404,24 +330,42 @@ export default function InvoiceGenerator() {
     }, 500);
   };
 
+  if (!invoiceDraft || !receipt || !receiptDraft || !paymentInfo) {
+    return (
+      <div className="min-h-screen bg-gray-200 p-4 flex items-center justify-center">
+        <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6 max-w-lg text-center">
+          <h1 className="text-xl font-bold text-gray-800 mb-2">
+            Data invoice belum tersedia di sesi ini.
+          </h1>
+          <p className="text-sm text-gray-600 mb-5">
+            Silakan kembali ke halaman invoice, isi datanya, lalu terbitkan kwitansi.
+          </p>
+          <button
+            onClick={() => router.push("/invoice")}
+            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition"
+          >
+            Kembali ke Invoice
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen bg-gray-200 font-sans p-3 flex flex-col items-center"
       style={PDF_SAFE_TAILWIND_COLOR_VARS}
     >
-      <Toolbar
+      <ReceiptToolbar
         isEditing={isEditing}
         isGenerating={isGenerating}
-        paperSize={paperSize}
-        pageOrientation={pageOrientation}
-        toolbarWidthMm={pageLayout.widthMm}
-        onResetDp={setDpTo30Percent}
+        receiptStatus={receiptDraft.receiptStatus}
+        toolbarWidthMm={RECEIPT_PAGE_LAYOUT.widthMm}
         onToggleEdit={() => setIsEditing((prev) => !prev)}
-        onPaperSizeChange={(value) => setPaperSize(value)}
-        onPageOrientationChange={(value) => setPageOrientation(value)}
+        onReceiptStatusChange={(value) => updateField("receiptStatus", value)}
+        onBackToInvoice={() => router.push("/invoice")}
         onManualPrint={handleManualPrint}
         onDownloadPdf={handleDownloadPDF}
-        onOpenReceiptPage={() => router.push("/kwitansi")}
       />
 
       <div
@@ -431,72 +375,22 @@ export default function InvoiceGenerator() {
       >
         <div
           ref={contentRef}
-          id="invoice-content"
+          id="receipt-content"
           className="bg-white shadow-2xl print:shadow-none relative box-border text-slate-900 leading-tight"
           style={{
-            width: `${pageLayout.widthMm}mm`,
-            minHeight: `${pageLayout.heightMm}mm`,
-            padding: `${pageLayout.verticalPaddingMm}mm ${pageLayout.horizontalPaddingMm}mm`,
+            width: `${RECEIPT_PAGE_LAYOUT.widthMm}mm`,
+            minHeight: `${RECEIPT_PAGE_LAYOUT.heightMm}mm`,
+            padding: `${RECEIPT_PAGE_LAYOUT.verticalPaddingMm}mm ${RECEIPT_PAGE_LAYOUT.horizontalPaddingMm}mm`,
             flexShrink: 0,
           }}
         >
-          <InvoiceHeader
-            orderId={invoice.orderId}
-            tagline={invoice.invoiceTagline}
-            isEditing={isEditing}
-            onOrderIdChange={(value) => updateField("orderId", value)}
-            onTaglineChange={(value) => updateField("invoiceTagline", value)}
-          />
-
-          <InfoSection
-            buyerName={invoice.buyerName}
-            date={invoice.date}
-            paymentMethod={invoice.paymentMethod}
-            bankName={invoice.bankName}
-            accountNumber={invoice.accountNumber}
-            recipientName={invoice.recipientName}
-            isEditing={isEditing}
-            formatDate={formatDate}
-            onBuyerNameChange={(value) => updateField("buyerName", value)}
-            onDateChange={(value) => updateField("date", value)}
-            onPaymentMethodChange={(value) => updateField("paymentMethod", value)}
-            onBankNameChange={(value) => updateField("bankName", value)}
-            onAccountNumberChange={(value) => updateField("accountNumber", value)}
-            onRecipientNameChange={(value) => updateField("recipientName", value)}
-          />
-
-          <ItemsTable
-            items={invoice.items}
+          <ReceiptDocument
+            receipt={receipt}
+            paymentInfo={paymentInfo}
             isEditing={isEditing}
             formatCurrency={formatCurrencyValue}
-            onItemChange={handleItemChange}
-            onAddItem={addItem}
-            onRemoveItem={removeItem}
-          />
-
-          <TotalsSection
-            subtotal={subtotal}
-            dpValue={invoice.dpValue}
-            dpAmount={dpAmount}
-            balance={balance}
-            isEditing={isEditing}
-            formatCurrency={formatCurrencyValue}
-            onDpValueChange={(value) => updateField("dpValue", value)}
-          />
-
-          <InvoiceFooter
-            location={invoice.location}
-            date={invoice.date}
-            sellerName={
-              invoice.invoiceTagline.trim().length > 0
-                ? invoice.invoiceTagline
-                : invoice.sellerName
-            }
-            signatureLabel={invoice.signatureLabel}
-            isEditing={isEditing}
             formatDate={formatDate}
-            onLocationChange={(value) => updateField("location", value)}
-            onSignatureLabelChange={(value) => updateField("signatureLabel", value)}
+            onFieldChange={updateField}
           />
         </div>
       </div>
@@ -504,7 +398,7 @@ export default function InvoiceGenerator() {
       <style>{`
         @media print {
           @page {
-            size: ${pageLayout.widthMm}mm ${pageLayout.heightMm}mm;
+            size: ${RECEIPT_PAGE_LAYOUT.widthMm}mm ${RECEIPT_PAGE_LAYOUT.heightMm}mm;
             margin: 0;
           }
 
@@ -518,11 +412,11 @@ export default function InvoiceGenerator() {
           .print\\:shadow-none { box-shadow: none !important; }
           .print\\:pb-0 { padding-bottom: 0 !important; }
 
-          #invoice-content {
-            width: ${pageLayout.widthMm}mm !important;
-            min-height: ${pageLayout.heightMm}mm !important;
+          #receipt-content {
+            width: ${RECEIPT_PAGE_LAYOUT.widthMm}mm !important;
+            min-height: ${RECEIPT_PAGE_LAYOUT.heightMm}mm !important;
             margin: 0 !important;
-            padding: ${pageLayout.verticalPaddingMm}mm ${pageLayout.horizontalPaddingMm}mm !important;
+            padding: ${RECEIPT_PAGE_LAYOUT.verticalPaddingMm}mm ${RECEIPT_PAGE_LAYOUT.horizontalPaddingMm}mm !important;
             page-break-after: avoid;
           }
         }

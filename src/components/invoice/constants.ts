@@ -12,8 +12,6 @@ export const INITIAL_INVOICE_STATE: InvoiceData = {
   buyerName: "Maowieee",
   paymentMethod: "Transfer",
   bankName: "BCA",
-  showReceipt: false,
-  receiptStatus: "Termin Pertama",
   accountNumber: "1234-567-890",
   recipientName: "AwiMawii",
   items: [
@@ -46,10 +44,5 @@ export const INITIAL_INVOICE_STATE: InvoiceData = {
 
 export const PAYMENT_METHOD_OPTIONS = ["Transfer", "E-Wallet", "QRIS"] as const;
 export const BANK_OPTIONS = ["BCA", "BNI", "BRI", "Mandiri", "CIMB Niaga"] as const;
-export const RECEIPT_STATUS_OPTIONS = [
-  "Termin Pertama",
-  "Termin Kedua",
-  "Full",
-] as const;
 export const PAPER_SIZE_OPTIONS = ["A5", "A4", "A3", "Letter", "Legal"] as const;
 export const PAGE_ORIENTATION_OPTIONS = ["portrait", "landscape"] as const;

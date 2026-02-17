@@ -1,45 +1,35 @@
 import { Download, Printer } from "lucide-react";
-import {
-  PAGE_ORIENTATION_OPTIONS,
-  PAPER_SIZE_OPTIONS,
-  RECEIPT_STATUS_OPTIONS,
-} from "./constants";
-import type { PageOrientation, PaperSize, ReceiptStatus } from "./types";
+import { PAGE_ORIENTATION_OPTIONS, PAPER_SIZE_OPTIONS } from "./constants";
+import type { PageOrientation, PaperSize } from "./types";
 
 type ToolbarProps = {
   isEditing: boolean;
   isGenerating: boolean;
-  showReceipt: boolean;
-  receiptStatus: ReceiptStatus;
   paperSize: PaperSize;
   pageOrientation: PageOrientation;
   toolbarWidthMm: number;
   onResetDp: () => void;
   onToggleEdit: () => void;
-  onToggleReceipt: () => void;
-  onReceiptStatusChange: (value: ReceiptStatus) => void;
   onPaperSizeChange: (value: PaperSize) => void;
   onPageOrientationChange: (value: PageOrientation) => void;
   onManualPrint: () => void;
   onDownloadPdf: () => void;
+  onOpenReceiptPage: () => void;
 };
 
 export default function Toolbar({
   isEditing,
   isGenerating,
-  showReceipt,
-  receiptStatus,
   paperSize,
   pageOrientation,
   toolbarWidthMm,
   onResetDp,
   onToggleEdit,
-  onToggleReceipt,
-  onReceiptStatusChange,
   onPaperSizeChange,
   onPageOrientationChange,
   onManualPrint,
   onDownloadPdf,
+  onOpenReceiptPage,
 }: ToolbarProps) {
   return (
     <div
@@ -78,36 +68,13 @@ export default function Toolbar({
           <Printer size={16} /> Print Manual
         </button>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onToggleReceipt}
-            disabled={isGenerating}
-            className={`px-3 py-2 text-xs font-bold rounded border transition ${
-              showReceipt
-                ? "text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100"
-                : "text-gray-700 bg-gray-100 border-gray-300 hover:bg-gray-200"
-            }`}
-          >
-            {showReceipt ? "Kwitansi Aktif" : "Terbitkan Kwitansi"}
-          </button>
-
-          {showReceipt ? (
-            <select
-              value={receiptStatus}
-              onChange={(event) =>
-                onReceiptStatusChange(event.target.value as ReceiptStatus)
-              }
-              disabled={isGenerating || !isEditing}
-              className="px-2 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded outline-none focus:border-blue-500 disabled:bg-gray-100"
-            >
-              {RECEIPT_STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          ) : null}
-        </div>
+        <button
+          onClick={onOpenReceiptPage}
+          disabled={isGenerating}
+          className="px-3 py-2 text-xs font-bold rounded border transition text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100"
+        >
+          Terbitkan Kwitansi
+        </button>
 
         <div className="flex items-center gap-2">
           <select
