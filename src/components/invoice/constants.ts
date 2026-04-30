@@ -37,8 +37,9 @@ export const INITIAL_INVOICE_STATE: InvoiceData = {
       price: 279500,
     },
   ],
-  dpType: "percent",
-  dpValue: 30,
+  dpPercent: 30,
+  terminNumber: 2,
+  terminPercent: 70,
   currency: "IDR",
 };
 

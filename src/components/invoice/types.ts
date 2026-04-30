@@ -3,8 +3,6 @@ export type BankName = "BCA" | "BNI" | "BRI" | "Mandiri" | "CIMB Niaga";
 export type PaperSize = "A5" | "A4" | "A3" | "Letter" | "Legal";
 export type PageOrientation = "portrait" | "landscape";
 
-export type DpType = "percent" | "fixed";
-
 export interface InvoiceItem {
   id: number;
   title: string;
@@ -28,8 +26,9 @@ export interface InvoiceData {
   accountNumber: string;
   recipientName: string;
   items: InvoiceItem[];
-  dpType: DpType;
-  dpValue: number;
+  dpPercent: number;
+  terminNumber: number;
+  terminPercent: number;
   currency: string;
 }
 

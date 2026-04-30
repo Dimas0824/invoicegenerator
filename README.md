@@ -21,10 +21,13 @@ Alur utama sekarang dipisah:
   - Sudah terima dari
   - Uang sejumlah (angka + terbilang)
   - Untuk pembayaran
+  - Keterangan termin dan persentase dari total invoice
   - Metode pembayaran (bank/rekening saat transfer)
   - Tempat/tanggal
   - Tanda tangan + placeholder materai
-- Status kwitansi: `Termin Pertama`, `Termin Kedua`, `Full`.
+- DP tetap dicatat sebagai `Termin ke-1`, misalnya `30%` dari total.
+- Penagihan termin aktif di invoice, misalnya `Termin ke-2` sebesar `70%` dari total.
+- Kwitansi otomatis fokus pada pembayaran termin aktif dari invoice.
 
 ## Route
 
@@ -66,7 +69,7 @@ src/
       utils.ts
     receipt/
       ReceiptGenerator.tsx      -> Orkestrasi kwitansi
-      ReceiptToolbar.tsx        -> Kontrol status, mode, print/pdf
+      ReceiptToolbar.tsx        -> Kontrol mode, info termin, print/pdf
       ReceiptDocument.tsx       -> Template legal dokumen kwitansi
       constants.ts
       types.ts
@@ -108,8 +111,8 @@ Buka:
 ## Alur Penggunaan
 
 1. Isi data invoice di halaman invoice.
-2. Atur item, subtotal, dan DP.
+2. Atur item, subtotal, persentase DP, nomor termin, dan persentase termin.
 3. Klik `Terbitkan Kwitansi`.
-4. Pilih status kwitansi (`Termin Pertama` / `Termin Kedua` / `Full`).
+4. Kwitansi otomatis memakai nominal termin aktif dari invoice.
 5. Cek hasil di `Preview Mode`.
 6. Export `Download PDF (Auto)` atau `Print Manual`.

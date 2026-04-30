@@ -19,16 +19,22 @@ import type {
   PaperSize,
 } from "./types";
 import {
-  calculateBalance,
-  calculateDP,
   calculateSubtotal,
+  calculateTerminAmount,
+  clampPercentage,
   formatCurrency,
   formatDate,
+  formatPercentage,
+  normalizeTerminNumber,
 } from "./utils";
 
 const UNSUPPORTED_COLOR_FUNCTION_PATTERN =
   /\b(?:lab|lch|oklab|oklch|color)\(/i;
 const OUTPUT_SAFE_SCALE_MARGIN = 0.97;
+
+type LegacyInvoiceData = Partial<InvoiceData> & {
+  dpValue?: number;
+};
 
 type CssVarStyle = CSSProperties & Record<`--${string}`, string>;
 
@@ -71,6 +77,27 @@ const PAGE_SIZE_DIMENSIONS: Record<
   Letter: { widthMm: 216, heightMm: 279, jsPdfFormat: "letter" },
   Legal: { widthMm: 216, heightMm: 356, jsPdfFormat: "legal" },
 };
+
+function normalizeInvoiceData(draft: LegacyInvoiceData | null): InvoiceData {
+  if (!draft) {
+    return INITIAL_INVOICE_STATE;
+  }
+
+  const fallbackDpPercent =
+    typeof draft.dpValue === "number" ? draft.dpValue : INITIAL_INVOICE_STATE.dpPercent;
+
+  return {
+    ...INITIAL_INVOICE_STATE,
+    ...draft,
+    dpPercent: clampPercentage(draft.dpPercent ?? fallbackDpPercent),
+    terminNumber: normalizeTerminNumber(
+      draft.terminNumber ?? INITIAL_INVOICE_STATE.terminNumber,
+    ),
+    terminPercent: clampPercentage(
+      draft.terminPercent ?? INITIAL_INVOICE_STATE.terminPercent,
+    ),
+  };
+}
 
 function syncComputedStylesForPdf(
   sourceRoot: HTMLElement,
@@ -173,10 +200,12 @@ export default function InvoiceGenerator() {
   const router = useRouter();
   const { invoiceDraft, setInvoiceDraft } = useInvoiceSession();
   const [invoice, setInvoice] = useState<InvoiceData>(
-    () => invoiceDraft ?? INITIAL_INVOICE_STATE,
+    () => normalizeInvoiceData(invoiceDraft),
   );
   const [isEditing, setIsEditing] = useState(true);
-  const [isPdfReady, setIsPdfReady] = useState(false);
+  const [isPdfReady, setIsPdfReady] = useState(
+    () => typeof window !== "undefined" && Boolean(window.html2pdf),
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [paperSize, setPaperSize] = useState<PaperSize>("A4");
   const [pageOrientation, setPageOrientation] = useState<PageOrientation>("portrait");
@@ -188,7 +217,6 @@ export default function InvoiceGenerator() {
 
   useEffect(() => {
     if (window.html2pdf) {
-      setIsPdfReady(true);
       return;
     }
 
@@ -229,10 +257,13 @@ export default function InvoiceGenerator() {
 
   const subtotal = useMemo(() => calculateSubtotal(invoice.items), [invoice.items]);
   const dpAmount = useMemo(
-    () => calculateDP(subtotal, invoice.dpType, invoice.dpValue),
-    [subtotal, invoice.dpType, invoice.dpValue],
+    () => calculateTerminAmount(subtotal, invoice.dpPercent),
+    [subtotal, invoice.dpPercent],
   );
-  const balance = useMemo(() => calculateBalance(subtotal, dpAmount), [subtotal, dpAmount]);
+  const terminAmount = useMemo(
+    () => calculateTerminAmount(subtotal, invoice.terminPercent),
+    [subtotal, invoice.terminPercent],
+  );
 
   const formatCurrencyValue = (amount: number): string => {
     return formatCurrency(amount, invoice.currency);
@@ -302,11 +333,12 @@ export default function InvoiceGenerator() {
     }));
   };
 
-  const setDpTo30Percent = () => {
+  const setTerminToSecondBilling = () => {
     setInvoice((prev) => ({
       ...prev,
-      dpType: "percent",
-      dpValue: 30,
+      dpPercent: 30,
+      terminNumber: 2,
+      terminPercent: 70,
     }));
   };
 
@@ -415,7 +447,7 @@ export default function InvoiceGenerator() {
         paperSize={paperSize}
         pageOrientation={pageOrientation}
         toolbarWidthMm={pageLayout.widthMm}
-        onResetDp={setDpTo30Percent}
+        onResetTermin={setTerminToSecondBilling}
         onToggleEdit={() => setIsEditing((prev) => !prev)}
         onPaperSizeChange={(value) => setPaperSize(value)}
         onPageOrientationChange={(value) => setPageOrientation(value)}
@@ -476,12 +508,23 @@ export default function InvoiceGenerator() {
 
           <TotalsSection
             subtotal={subtotal}
-            dpValue={invoice.dpValue}
+            dpPercent={invoice.dpPercent}
             dpAmount={dpAmount}
-            balance={balance}
+            terminNumber={invoice.terminNumber}
+            terminPercent={invoice.terminPercent}
+            terminAmount={terminAmount}
             isEditing={isEditing}
             formatCurrency={formatCurrencyValue}
-            onDpValueChange={(value) => updateField("dpValue", value)}
+            formatPercentage={formatPercentage}
+            onDpPercentChange={(value) =>
+              updateField("dpPercent", clampPercentage(value))
+            }
+            onTerminNumberChange={(value) =>
+              updateField("terminNumber", normalizeTerminNumber(value))
+            }
+            onTerminPercentChange={(value) =>
+              updateField("terminPercent", clampPercentage(value))
+            }
           />
 
           <InvoiceFooter

@@ -1,7 +1,10 @@
-import { DEFAULT_RECEIPT_STATUS } from "./constants";
-import type { ReceiptData, ReceiptDraftData, ReceiptStatus } from "./types";
+import type { ReceiptData, ReceiptDraftData } from "./types";
 import type { InvoiceData } from "../invoice/types";
-import { calculateBalance, calculateDP, calculateSubtotal } from "../invoice/utils";
+import {
+  calculateSubtotal,
+  calculateTerminAmount,
+  formatTerminLabel,
+} from "../invoice/utils";
 
 const INDONESIAN_NUMBER_WORDS = [
   "nol",
@@ -106,36 +109,18 @@ export function formatEmptyValue(value: string): string {
   return normalized.length > 0 ? normalized : "-";
 }
 
-export function getReceiptAmount(
-  subtotal: number,
-  dpAmount: number,
-  balance: number,
-  status: ReceiptStatus,
-): number {
-  switch (status) {
-    case "Termin Pertama":
-      return dpAmount;
-    case "Termin Kedua":
-      return Math.max(balance, 0);
-    case "Full":
-      return subtotal;
-    default:
-      return subtotal;
-  }
-}
-
 export function createReceiptDraftFromInvoice(invoice: InvoiceData): ReceiptDraftData {
   const receiptDate = invoice.date || new Date().toISOString().slice(0, 10);
   const orderId = invoice.orderId.trim().length > 0 ? invoice.orderId.trim() : "INV";
+  const terminLabel = formatTerminLabel(invoice.terminNumber);
 
   return {
     receiptNumber: `KW-${orderId}-${toCompactDate(receiptDate)}`,
     receiptDate,
-    receiptStatus: DEFAULT_RECEIPT_STATUS,
     receivedFrom: invoice.buyerName,
     paymentFor: invoice.invoiceTagline
-      ? `Pembayaran ${invoice.invoiceTagline}`
-      : "Pembayaran",
+      ? `Pembayaran ${terminLabel} ${invoice.invoiceTagline}`
+      : `Pembayaran ${terminLabel}`,
     location: invoice.location,
     receivedBy:
       invoice.invoiceTagline.trim().length > 0
@@ -149,19 +134,16 @@ export function buildReceiptData(
   draft: ReceiptDraftData,
 ): ReceiptData {
   const subtotal = calculateSubtotal(invoice.items);
-  const dpAmount = calculateDP(subtotal, invoice.dpType, invoice.dpValue);
-  const balance = calculateBalance(subtotal, dpAmount);
-  const amountReceived = getReceiptAmount(
-    subtotal,
-    dpAmount,
-    balance,
-    draft.receiptStatus,
-  );
+  const amountReceived = calculateTerminAmount(subtotal, invoice.terminPercent);
+  const terminLabel = formatTerminLabel(invoice.terminNumber);
 
   return {
     ...draft,
     currency: invoice.currency,
     amountReceived,
     amountInWords: toAmountInWords(amountReceived),
+    terminNumber: invoice.terminNumber,
+    terminPercent: invoice.terminPercent,
+    terminLabel,
   };
 }

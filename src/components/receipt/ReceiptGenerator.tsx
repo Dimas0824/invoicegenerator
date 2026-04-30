@@ -137,24 +137,22 @@ export default function ReceiptGenerator() {
   const router = useRouter();
   const { invoiceDraft } = useInvoiceSession();
   const [isEditing, setIsEditing] = useState(true);
-  const [isPdfReady, setIsPdfReady] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [receiptDraft, setReceiptDraft] = useState<ReceiptDraftData | null>(() =>
-    invoiceDraft ? createReceiptDraftFromInvoice(invoiceDraft) : null,
+  const [isPdfReady, setIsPdfReady] = useState(
+    () => typeof window !== "undefined" && Boolean(window.html2pdf),
   );
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [receiptDraftOverride, setReceiptDraftOverride] =
+    useState<ReceiptDraftData | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!invoiceDraft || receiptDraft) {
-      return;
-    }
-
-    setReceiptDraft(createReceiptDraftFromInvoice(invoiceDraft));
-  }, [invoiceDraft, receiptDraft]);
+  const generatedReceiptDraft = useMemo(
+    () => (invoiceDraft ? createReceiptDraftFromInvoice(invoiceDraft) : null),
+    [invoiceDraft],
+  );
+  const receiptDraft = receiptDraftOverride ?? generatedReceiptDraft;
 
   useEffect(() => {
     if (window.html2pdf) {
-      setIsPdfReady(true);
       return;
     }
 
@@ -224,13 +222,14 @@ export default function ReceiptGenerator() {
     field: K,
     value: ReceiptDraftData[K],
   ): void => {
-    setReceiptDraft((prev) => {
-      if (!prev) {
+    setReceiptDraftOverride((prev) => {
+      const baseDraft = prev ?? generatedReceiptDraft;
+      if (!baseDraft) {
         return prev;
       }
 
       return {
-        ...prev,
+        ...baseDraft,
         [field]: value,
       };
     });
@@ -359,10 +358,10 @@ export default function ReceiptGenerator() {
       <ReceiptToolbar
         isEditing={isEditing}
         isGenerating={isGenerating}
-        receiptStatus={receiptDraft.receiptStatus}
+        terminLabel={receipt.terminLabel}
+        terminPercent={receipt.terminPercent}
         toolbarWidthMm={RECEIPT_PAGE_LAYOUT.widthMm}
         onToggleEdit={() => setIsEditing((prev) => !prev)}
-        onReceiptStatusChange={(value) => updateField("receiptStatus", value)}
         onBackToInvoice={() => router.push("/invoice")}
         onManualPrint={handleManualPrint}
         onDownloadPdf={handleDownloadPDF}

@@ -1,4 +1,4 @@
-import type { DpType, InvoiceItem } from "./types";
+import type { InvoiceItem } from "./types";
 
 export function formatCurrency(amount: number, currency: string): string {
   return new Intl.NumberFormat("id-ID", {
@@ -27,18 +27,36 @@ export function calculateSubtotal(items: InvoiceItem[]): number {
   return items.reduce((acc, item) => acc + item.quantity * item.price, 0);
 }
 
-export function calculateDP(
-  subtotal: number,
-  dpType: DpType,
-  dpValue: number,
-): number {
-  if (dpType === "percent") {
-    return subtotal * (dpValue / 100);
+export function clampPercentage(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
   }
 
-  return dpValue;
+  return Math.min(Math.max(value, 0), 100);
 }
 
-export function calculateBalance(subtotal: number, dpAmount: number): number {
-  return subtotal - dpAmount;
+export function normalizeTerminNumber(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 2;
+  }
+
+  return Math.max(2, Math.floor(value));
+}
+
+export function formatPercentage(value: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(clampPercentage(value));
+}
+
+export function formatTerminLabel(terminNumber: number): string {
+  return `Termin ke-${normalizeTerminNumber(terminNumber)}`;
+}
+
+export function calculateTerminAmount(
+  subtotal: number,
+  terminPercent: number,
+): number {
+  return subtotal * (clampPercentage(terminPercent) / 100);
 }

@@ -1,4 +1,5 @@
 import type { ReceiptData, ReceiptDraftData, ReceiptPaymentInfo } from "./types";
+import { formatPercentage } from "../invoice/utils";
 import { formatEmptyValue } from "./utils";
 
 type ReceiptDocumentProps = {
@@ -59,12 +60,9 @@ export default function ReceiptDocument({
   formatDate,
   onFieldChange,
 }: ReceiptDocumentProps) {
-  const terminDescription =
-    receipt.receiptStatus === "Termin Pertama"
-      ? "Termin ke-1"
-      : receipt.receiptStatus === "Termin Kedua"
-        ? "Termin ke-2"
-        : "Pelunasan (Full)";
+  const terminDescription = `${receipt.terminLabel} (${formatPercentage(
+    receipt.terminPercent,
+  )}% dari total invoice)`;
 
   return (
     <div className="h-full flex flex-col">

@@ -8,7 +8,7 @@ type ToolbarProps = {
   paperSize: PaperSize;
   pageOrientation: PageOrientation;
   toolbarWidthMm: number;
-  onResetDp: () => void;
+  onResetTermin: () => void;
   onToggleEdit: () => void;
   onPaperSizeChange: (value: PaperSize) => void;
   onPageOrientationChange: (value: PageOrientation) => void;
@@ -23,7 +23,7 @@ export default function Toolbar({
   paperSize,
   pageOrientation,
   toolbarWidthMm,
-  onResetDp,
+  onResetTermin,
   onToggleEdit,
   onPaperSizeChange,
   onPageOrientationChange,
@@ -45,11 +45,11 @@ export default function Toolbar({
 
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={onResetDp}
+          onClick={onResetTermin}
           disabled={isGenerating}
           className="px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50 rounded border border-blue-200 hover:bg-blue-100 transition"
         >
-          Reset DP 30%
+          Reset DP 30% + Termin 2 70%
         </button>
 
         <button

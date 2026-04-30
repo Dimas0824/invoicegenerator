@@ -1,15 +1,14 @@
 import { Download, Printer } from "lucide-react";
 
-import { RECEIPT_STATUS_OPTIONS } from "./constants";
-import type { ReceiptStatus } from "./types";
+import { formatPercentage } from "../invoice/utils";
 
 type ReceiptToolbarProps = {
   isEditing: boolean;
   isGenerating: boolean;
-  receiptStatus: ReceiptStatus;
+  terminLabel: string;
+  terminPercent: number;
   toolbarWidthMm: number;
   onToggleEdit: () => void;
-  onReceiptStatusChange: (value: ReceiptStatus) => void;
   onBackToInvoice: () => void;
   onManualPrint: () => void;
   onDownloadPdf: () => void;
@@ -18,10 +17,10 @@ type ReceiptToolbarProps = {
 export default function ReceiptToolbar({
   isEditing,
   isGenerating,
-  receiptStatus,
+  terminLabel,
+  terminPercent,
   toolbarWidthMm,
   onToggleEdit,
-  onReceiptStatusChange,
   onBackToInvoice,
   onManualPrint,
   onDownloadPdf,
@@ -53,18 +52,9 @@ export default function ReceiptToolbar({
           {isEditing ? "Preview Mode" : "Edit Mode"}
         </button>
 
-        <select
-          value={receiptStatus}
-          onChange={(event) => onReceiptStatusChange(event.target.value as ReceiptStatus)}
-          disabled={isGenerating || !isEditing}
-          className="px-2 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded outline-none focus:border-blue-500 disabled:bg-gray-100"
-        >
-          {RECEIPT_STATUS_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        <div className="px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50 rounded border border-blue-200">
+          {terminLabel} - {formatPercentage(terminPercent)}% dari total
+        </div>
 
         <button
           onClick={onManualPrint}
