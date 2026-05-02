@@ -2,6 +2,7 @@ type InvoiceHeaderProps = {
   orderId: string;
   tagline: string;
   isEditing: boolean;
+  accentColor: string;
   onOrderIdChange: (value: string) => void;
   onTaglineChange: (value: string) => void;
 };
@@ -10,12 +11,19 @@ export default function InvoiceHeader({
   orderId,
   tagline,
   isEditing,
+  accentColor,
   onOrderIdChange,
   onTaglineChange,
 }: InvoiceHeaderProps) {
   return (
-    <div className="text-center mb-4 border-b-2 border-gray-800 pb-3">
-      <h1 className="text-2xl font-extrabold uppercase tracking-widest text-slate-800 leading-none">
+    <div
+      className="text-center mb-4 border-b-2 pb-3"
+      style={{ borderColor: accentColor }}
+    >
+      <h1
+        className="text-2xl font-extrabold uppercase tracking-widest leading-none"
+        style={{ color: accentColor }}
+      >
         INVOICE
       </h1>
       {isEditing ? (

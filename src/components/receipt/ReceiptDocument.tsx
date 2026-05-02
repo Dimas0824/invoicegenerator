@@ -6,6 +6,7 @@ type ReceiptDocumentProps = {
   receipt: ReceiptData;
   paymentInfo: ReceiptPaymentInfo;
   isEditing: boolean;
+  accentColor: string;
   formatCurrency: (value: number) => string;
   formatDate: (value: string) => string;
   onFieldChange: <K extends keyof ReceiptDraftData>(
@@ -56,6 +57,7 @@ export default function ReceiptDocument({
   receipt,
   paymentInfo,
   isEditing,
+  accentColor,
   formatCurrency,
   formatDate,
   onFieldChange,
@@ -66,8 +68,14 @@ export default function ReceiptDocument({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="text-center mb-5 border-b-2 border-gray-800 pb-3">
-        <h1 className="text-3xl font-extrabold uppercase tracking-[0.25em] text-slate-800 leading-none">
+      <div
+        className="text-center mb-5 border-b-2 pb-3"
+        style={{ borderColor: accentColor }}
+      >
+        <h1
+          className="text-3xl font-extrabold uppercase tracking-[0.25em] leading-none"
+          style={{ color: accentColor }}
+        >
           KWITANSI
         </h1>
 
@@ -102,7 +110,7 @@ export default function ReceiptDocument({
         <div className="grid grid-cols-[180px_1fr] gap-3 items-start">
           <p className="font-semibold text-gray-700">Uang sejumlah</p>
           <div>
-            <p className="font-bold text-lg text-gray-900">
+            <p className="font-bold text-lg" style={{ color: accentColor }}>
               {formatCurrency(receipt.amountReceived)}
             </p>
             <p className="text-xs italic text-gray-600 mt-0.5">
@@ -141,7 +149,10 @@ export default function ReceiptDocument({
               {formatEmptyValue(paymentInfo.paymentMethod)}
             </p>
             {paymentInfo.paymentMethod === "Transfer" ? (
-              <div className="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded p-2 space-y-1">
+              <div
+                className="text-xs text-gray-700 bg-gray-50 border rounded p-2 space-y-1"
+                style={{ borderColor: `${accentColor}33` }}
+              >
                 <p>
                   Bank: <span className="font-semibold">{formatEmptyValue(paymentInfo.bankName)}</span>
                 </p>
@@ -197,7 +208,7 @@ export default function ReceiptDocument({
               value={receipt.receivedBy}
               isEditing={isEditing}
               onChange={(value) => onFieldChange("receivedBy", value)}
-              className="font-bold text-gray-800 text-center w-full"
+              className="font-bold text-center w-full"
             />
           </div>
         </div>

@@ -1,4 +1,12 @@
 import type { InvoiceItem } from "./types";
+import { DEFAULT_BRAND_COLOR } from "./constants";
+
+const MAX_BRAND_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
+const SUPPORTED_BRAND_LOGO_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+]);
 
 export function formatCurrency(amount: number, currency: string): string {
   return new Intl.NumberFormat("id-ID", {
@@ -59,4 +67,45 @@ export function calculateTerminAmount(
   terminPercent: number,
 ): number {
   return subtotal * (clampPercentage(terminPercent) / 100);
+}
+
+export function normalizeHexColor(value: string | undefined): string {
+  if (!value) {
+    return DEFAULT_BRAND_COLOR;
+  }
+
+  return /^#[0-9a-f]{6}$/i.test(value) ? value : DEFAULT_BRAND_COLOR;
+}
+
+export function validateBrandLogoFile(file: File): string | null {
+  if (!SUPPORTED_BRAND_LOGO_TYPES.has(file.type)) {
+    return "Format logo harus PNG, JPG, atau WebP.";
+  }
+
+  if (file.size > MAX_BRAND_LOGO_SIZE_BYTES) {
+    return "Ukuran logo maksimal 2 MB.";
+  }
+
+  return null;
+}
+
+export function readImageFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("Gagal membaca file logo."));
+    });
+
+    reader.addEventListener("error", () => {
+      reject(new Error("Gagal membaca file logo."));
+    });
+
+    reader.readAsDataURL(file);
+  });
 }

@@ -6,6 +6,7 @@ type TotalsSectionProps = {
   terminPercent: number;
   terminAmount: number;
   isEditing: boolean;
+  accentColor: string;
   formatCurrency: (value: number) => string;
   formatPercentage: (value: number) => string;
   onDpPercentChange: (value: number) => void;
@@ -21,6 +22,7 @@ export default function TotalsSection({
   terminPercent,
   terminAmount,
   isEditing,
+  accentColor,
   formatCurrency,
   formatPercentage,
   onDpPercentChange,
@@ -72,7 +74,13 @@ export default function TotalsSection({
           </span>
         </div>
 
-        <div className="flex justify-between items-start gap-3 py-1.5 border-b border-gray-200 bg-blue-50 px-2 -mx-2 my-1.5 rounded-sm">
+        <div
+          className="flex justify-between items-start gap-3 py-1.5 border-b px-2 -mx-2 my-1.5 rounded-sm"
+          style={{
+            backgroundColor: `${accentColor}14`,
+            borderColor: `${accentColor}33`,
+          }}
+        >
           <div className="flex min-w-0 flex-col">
             <span className="font-bold text-xs text-gray-800">
               Tagihan {terminLabel}
@@ -113,12 +121,18 @@ export default function TotalsSection({
                 </label>
               </div>
             ) : (
-              <span className="text-[11px] font-semibold text-blue-700">
+              <span
+                className="text-[11px] font-semibold"
+                style={{ color: accentColor }}
+              >
                 {formatPercentage(terminPercent)}% dari total
               </span>
             )}
 
-            <span className="text-[10px] text-blue-600 italic mt-0.5">
+            <span
+              className="text-[10px] italic mt-0.5"
+              style={{ color: accentColor }}
+            >
               *Termin ini adalah tagihan setelah DP.
             </span>
           </div>
@@ -128,7 +142,10 @@ export default function TotalsSection({
           </span>
         </div>
 
-        <div className="flex justify-between items-center py-2 border-t-2 border-gray-800">
+        <div
+          className="flex justify-between items-center py-2 border-t-2"
+          style={{ borderColor: accentColor }}
+        >
           <span className="font-bold text-sm text-gray-800">
             {terminLabel}
           </span>

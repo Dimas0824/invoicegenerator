@@ -9,6 +9,7 @@ type InfoSectionProps = {
   accountNumber: string;
   recipientName: string;
   isEditing: boolean;
+  accentColor: string;
   formatDate: (value: string) => string;
   onBuyerNameChange: (value: string) => void;
   onDateChange: (value: string) => void;
@@ -26,6 +27,7 @@ export default function InfoSection({
   accountNumber,
   recipientName,
   isEditing,
+  accentColor,
   formatDate,
   onBuyerNameChange,
   onDateChange,
@@ -36,8 +38,14 @@ export default function InfoSection({
 }: InfoSectionProps) {
   return (
     <div className="grid grid-cols-2 gap-5 mb-5">
-      <div className="bg-gray-50 p-3 rounded border border-gray-200">
-        <h3 className="text-[11px] font-bold text-gray-800 uppercase border-b border-gray-300 pb-1.5 mb-2.5 tracking-wider">
+      <div
+        className="bg-gray-50 p-3 rounded border border-gray-200 border-l-4"
+        style={{ borderLeftColor: accentColor }}
+      >
+        <h3
+          className="text-[11px] font-bold uppercase border-b border-gray-300 pb-1.5 mb-2.5 tracking-wider"
+          style={{ color: accentColor }}
+        >
           Info Klien
         </h3>
 
@@ -59,8 +67,14 @@ export default function InfoSection({
         </div>
       </div>
 
-      <div className="bg-gray-50 p-3 rounded border border-gray-200">
-        <h3 className="text-[11px] font-bold text-gray-800 uppercase border-b border-gray-300 pb-1.5 mb-2.5 tracking-wider">
+      <div
+        className="bg-gray-50 p-3 rounded border border-gray-200 border-l-4"
+        style={{ borderLeftColor: accentColor }}
+      >
+        <h3
+          className="text-[11px] font-bold uppercase border-b border-gray-300 pb-1.5 mb-2.5 tracking-wider"
+          style={{ color: accentColor }}
+        >
           Detail Pembayaran
         </h3>
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { INITIAL_INVOICE_STATE } from "./constants";
 import { useInvoiceSession } from "../../context/InvoiceSessionContext";
+import DocumentWatermark from "../shared/DocumentWatermark";
 import InfoSection from "./InfoSection";
 import InvoiceFooter from "./InvoiceFooter";
 import InvoiceHeader from "./InvoiceHeader";
@@ -24,7 +25,10 @@ import {
   formatCurrency,
   formatDate,
   formatPercentage,
+  normalizeHexColor,
   normalizeTerminNumber,
+  readImageFileAsDataUrl,
+  validateBrandLogoFile,
 } from "./utils";
 
 const OUTPUT_SAFE_SCALE_MARGIN = 0.97;
@@ -58,6 +62,9 @@ function normalizeInvoiceData(draft: LegacyInvoiceData | null): InvoiceData {
   return {
     ...INITIAL_INVOICE_STATE,
     ...draft,
+    brandColor: normalizeHexColor(draft.brandColor),
+    brandLogoDataUrl:
+      typeof draft.brandLogoDataUrl === "string" ? draft.brandLogoDataUrl : "",
     dpPercent: clampPercentage(draft.dpPercent ?? fallbackDpPercent),
     terminNumber: normalizeTerminNumber(
       draft.terminNumber ?? INITIAL_INVOICE_STATE.terminNumber,
@@ -224,6 +231,22 @@ export default function InvoiceGenerator() {
     }));
   };
 
+  const handleBrandLogoUpload = async (file: File): Promise<void> => {
+    const validationError = validateBrandLogoFile(file);
+    if (validationError) {
+      window.alert(validationError);
+      return;
+    }
+
+    try {
+      const logoDataUrl = await readImageFileAsDataUrl(file);
+      updateField("brandLogoDataUrl", logoDataUrl);
+    } catch (error) {
+      console.error(error);
+      window.alert("Gagal membaca file logo.");
+    }
+  };
+
   const handleManualPrint = () => {
     const wasEditing = isEditing;
     setIsGenerating(true);
@@ -281,6 +304,11 @@ export default function InvoiceGenerator() {
         onToggleEdit={() => setIsEditing((prev) => !prev)}
         onPaperSizeChange={(value) => setPaperSize(value)}
         onPageOrientationChange={(value) => setPageOrientation(value)}
+        brandColor={invoice.brandColor}
+        onBrandColorChange={(value) => updateField("brandColor", normalizeHexColor(value))}
+        hasBrandLogo={invoice.brandLogoDataUrl.trim().length > 0}
+        onBrandLogoUpload={handleBrandLogoUpload}
+        onBrandLogoClear={() => updateField("brandLogoDataUrl", "")}
         onManualPrint={handleManualPrint}
         onOpenReceiptPage={() => router.push("/kwitansi")}
       />
@@ -299,75 +327,88 @@ export default function InvoiceGenerator() {
             flexShrink: 0,
           }}
         >
-          <InvoiceHeader
-            orderId={invoice.orderId}
-            tagline={invoice.invoiceTagline}
-            isEditing={isEditing}
-            onOrderIdChange={(value) => updateField("orderId", value)}
-            onTaglineChange={(value) => updateField("invoiceTagline", value)}
+          <DocumentWatermark
+            accentColor={invoice.brandColor}
+            label="INVOICE"
+            logoDataUrl={invoice.brandLogoDataUrl}
           />
 
-          <InfoSection
-            buyerName={invoice.buyerName}
-            date={invoice.date}
-            paymentMethod={invoice.paymentMethod}
-            bankName={invoice.bankName}
-            accountNumber={invoice.accountNumber}
-            recipientName={invoice.recipientName}
-            isEditing={isEditing}
-            formatDate={formatDate}
-            onBuyerNameChange={(value) => updateField("buyerName", value)}
-            onDateChange={(value) => updateField("date", value)}
-            onPaymentMethodChange={(value) => updateField("paymentMethod", value)}
-            onBankNameChange={(value) => updateField("bankName", value)}
-            onAccountNumberChange={(value) => updateField("accountNumber", value)}
-            onRecipientNameChange={(value) => updateField("recipientName", value)}
-          />
+          <div className="relative z-10 flex min-h-full flex-col">
+            <InvoiceHeader
+              orderId={invoice.orderId}
+              tagline={invoice.invoiceTagline}
+              isEditing={isEditing}
+              accentColor={invoice.brandColor}
+              onOrderIdChange={(value) => updateField("orderId", value)}
+              onTaglineChange={(value) => updateField("invoiceTagline", value)}
+            />
 
-          <ItemsTable
-            items={invoice.items}
-            isEditing={isEditing}
-            formatCurrency={formatCurrencyValue}
-            onItemChange={handleItemChange}
-            onAddItem={addItem}
-            onRemoveItem={removeItem}
-          />
+            <InfoSection
+              buyerName={invoice.buyerName}
+              date={invoice.date}
+              paymentMethod={invoice.paymentMethod}
+              bankName={invoice.bankName}
+              accountNumber={invoice.accountNumber}
+              recipientName={invoice.recipientName}
+              isEditing={isEditing}
+              accentColor={invoice.brandColor}
+              formatDate={formatDate}
+              onBuyerNameChange={(value) => updateField("buyerName", value)}
+              onDateChange={(value) => updateField("date", value)}
+              onPaymentMethodChange={(value) => updateField("paymentMethod", value)}
+              onBankNameChange={(value) => updateField("bankName", value)}
+              onAccountNumberChange={(value) => updateField("accountNumber", value)}
+              onRecipientNameChange={(value) => updateField("recipientName", value)}
+            />
 
-          <TotalsSection
-            subtotal={subtotal}
-            dpPercent={invoice.dpPercent}
-            dpAmount={dpAmount}
-            terminNumber={invoice.terminNumber}
-            terminPercent={invoice.terminPercent}
-            terminAmount={terminAmount}
-            isEditing={isEditing}
-            formatCurrency={formatCurrencyValue}
-            formatPercentage={formatPercentage}
-            onDpPercentChange={(value) =>
-              updateField("dpPercent", clampPercentage(value))
-            }
-            onTerminNumberChange={(value) =>
-              updateField("terminNumber", normalizeTerminNumber(value))
-            }
-            onTerminPercentChange={(value) =>
-              updateField("terminPercent", clampPercentage(value))
-            }
-          />
+            <ItemsTable
+              items={invoice.items}
+              isEditing={isEditing}
+              accentColor={invoice.brandColor}
+              formatCurrency={formatCurrencyValue}
+              onItemChange={handleItemChange}
+              onAddItem={addItem}
+              onRemoveItem={removeItem}
+            />
 
-          <InvoiceFooter
-            location={invoice.location}
-            date={invoice.date}
-            sellerName={
-              invoice.invoiceTagline.trim().length > 0
-                ? invoice.invoiceTagline
-                : invoice.sellerName
-            }
-            signatureLabel={invoice.signatureLabel}
-            isEditing={isEditing}
-            formatDate={formatDate}
-            onLocationChange={(value) => updateField("location", value)}
-            onSignatureLabelChange={(value) => updateField("signatureLabel", value)}
-          />
+            <TotalsSection
+              subtotal={subtotal}
+              dpPercent={invoice.dpPercent}
+              dpAmount={dpAmount}
+              terminNumber={invoice.terminNumber}
+              terminPercent={invoice.terminPercent}
+              terminAmount={terminAmount}
+              isEditing={isEditing}
+              accentColor={invoice.brandColor}
+              formatCurrency={formatCurrencyValue}
+              formatPercentage={formatPercentage}
+              onDpPercentChange={(value) =>
+                updateField("dpPercent", clampPercentage(value))
+              }
+              onTerminNumberChange={(value) =>
+                updateField("terminNumber", normalizeTerminNumber(value))
+              }
+              onTerminPercentChange={(value) =>
+                updateField("terminPercent", clampPercentage(value))
+              }
+            />
+
+            <InvoiceFooter
+              location={invoice.location}
+              date={invoice.date}
+              sellerName={
+                invoice.invoiceTagline.trim().length > 0
+                  ? invoice.invoiceTagline
+                  : invoice.sellerName
+              }
+              signatureLabel={invoice.signatureLabel}
+              isEditing={isEditing}
+              accentColor={invoice.brandColor}
+              formatDate={formatDate}
+              onLocationChange={(value) => updateField("location", value)}
+              onSignatureLabelChange={(value) => updateField("signatureLabel", value)}
+            />
+          </div>
         </div>
       </div>
 

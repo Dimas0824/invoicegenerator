@@ -8,10 +8,15 @@ type ToolbarProps = {
   paperSize: PaperSize;
   pageOrientation: PageOrientation;
   toolbarWidthMm: number;
+  brandColor: string;
+  hasBrandLogo: boolean;
   onResetTermin: () => void;
   onToggleEdit: () => void;
   onPaperSizeChange: (value: PaperSize) => void;
   onPageOrientationChange: (value: PageOrientation) => void;
+  onBrandColorChange: (value: string) => void;
+  onBrandLogoUpload: (file: File) => void;
+  onBrandLogoClear: () => void;
   onManualPrint: () => void;
   onOpenReceiptPage: () => void;
 };
@@ -22,10 +27,15 @@ export default function Toolbar({
   paperSize,
   pageOrientation,
   toolbarWidthMm,
+  brandColor,
+  hasBrandLogo,
   onResetTermin,
   onToggleEdit,
   onPaperSizeChange,
   onPageOrientationChange,
+  onBrandColorChange,
+  onBrandLogoUpload,
+  onBrandLogoClear,
   onManualPrint,
   onOpenReceiptPage,
 }: ToolbarProps) {
@@ -37,7 +47,7 @@ export default function Toolbar({
       <div>
         <h1 className="text-lg font-bold text-gray-800">Invoice Generator</h1>
         <p className="text-xs text-gray-500">
-          Gunakan print dialog untuk cetak atau simpan sebagai PDF.
+          Upload logo akan mengganti watermark SVG default.
         </p>
       </div>
 
@@ -75,6 +85,47 @@ export default function Toolbar({
         </button>
 
         <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 px-2 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded">
+            Warna
+            <input
+              type="color"
+              value={brandColor}
+              onChange={(event) => onBrandColorChange(event.target.value)}
+              disabled={isGenerating}
+              className="h-6 w-8 cursor-pointer rounded border border-gray-300 bg-white p-0 disabled:cursor-not-allowed"
+              title="Warna brand dokumen"
+            />
+          </label>
+
+          <label className="flex cursor-pointer items-center gap-2 px-2 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
+            Upload Logo
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              disabled={isGenerating}
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) {
+                  onBrandLogoUpload(file);
+                }
+
+                event.target.value = "";
+              }}
+            />
+          </label>
+
+          {hasBrandLogo ? (
+            <button
+              type="button"
+              onClick={onBrandLogoClear}
+              disabled={isGenerating}
+              className="px-2 py-2 text-xs font-bold text-red-700 bg-red-50 rounded border border-red-200 hover:bg-red-100 transition disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              Hapus Logo
+            </button>
+          ) : null}
+
           <select
             value={paperSize}
             onChange={(event) => onPaperSizeChange(event.target.value as PaperSize)}

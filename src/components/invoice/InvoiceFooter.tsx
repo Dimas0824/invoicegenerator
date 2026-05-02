@@ -4,6 +4,7 @@ type InvoiceFooterProps = {
   sellerName: string;
   signatureLabel: string;
   isEditing: boolean;
+  accentColor: string;
   formatDate: (value: string) => string;
   onLocationChange: (value: string) => void;
   onSignatureLabelChange: (value: string) => void;
@@ -15,6 +16,7 @@ export default function InvoiceFooter({
   sellerName,
   signatureLabel,
   isEditing,
+  accentColor,
   formatDate,
   onLocationChange,
   onSignatureLabelChange,
@@ -38,10 +40,15 @@ export default function InvoiceFooter({
           , {formatDate(date)}
         </div>
 
-        <div className="font-bold text-gray-800 mb-1 text-sm">{sellerName}</div>
+        <div className="font-bold mb-1 text-sm" style={{ color: accentColor }}>
+          {sellerName}
+        </div>
 
         <div className="h-14 w-full flex items-end justify-center">
-          <div className="border-b border-gray-300 w-32"></div>
+          <div
+            className="border-b w-32"
+            style={{ borderColor: `${accentColor}66` }}
+          ></div>
         </div>
 
         <div className="font-medium text-gray-500 text-[10px] mt-1">

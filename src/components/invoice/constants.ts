@@ -1,5 +1,7 @@
 import type { InvoiceData } from "./types";
 
+export const DEFAULT_BRAND_COLOR = "#1e293b";
+
 export const INITIAL_INVOICE_STATE: InvoiceData = {
   orderId: "WEB-DEV-1202",
   invoiceTagline: "JASA PENGEMBANGAN WEB",
@@ -14,6 +16,8 @@ export const INITIAL_INVOICE_STATE: InvoiceData = {
   bankName: "BCA",
   accountNumber: "1234-567-890",
   recipientName: "AwiMawii",
+  brandColor: DEFAULT_BRAND_COLOR,
+  brandLogoDataUrl: "",
   items: [
     {
       id: 1,

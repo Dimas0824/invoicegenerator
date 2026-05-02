@@ -5,6 +5,7 @@ import type { InvoiceItem, InvoiceItemChangeHandler } from "./types";
 type ItemsTableProps = {
   items: InvoiceItem[];
   isEditing: boolean;
+  accentColor: string;
   formatCurrency: (value: number) => string;
   onItemChange: InvoiceItemChangeHandler;
   onAddItem: () => void;
@@ -14,6 +15,7 @@ type ItemsTableProps = {
 export default function ItemsTable({
   items,
   isEditing,
+  accentColor,
   formatCurrency,
   onItemChange,
   onAddItem,
@@ -23,7 +25,7 @@ export default function ItemsTable({
     <div className="mb-5">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="bg-slate-800 text-white">
+          <tr className="text-white" style={{ backgroundColor: accentColor }}>
             <th className="py-1.5 px-2 text-center text-[10px] uppercase font-bold w-10 rounded-tl-md">
               No
             </th>
@@ -39,7 +41,10 @@ export default function ItemsTable({
             <th className="py-1.5 px-3 text-right text-[10px] uppercase font-bold w-28 rounded-tr-md">
               Total
             </th>
-            <th className="py-1.5 w-8 print:hidden bg-slate-800"></th>
+            <th
+              className="py-1.5 w-8 print:hidden"
+              style={{ backgroundColor: accentColor }}
+            ></th>
           </tr>
         </thead>
 

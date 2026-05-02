@@ -4,7 +4,14 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 
 import { useInvoiceSession } from "../../context/InvoiceSessionContext";
-import { formatCurrency, formatDate } from "../invoice/utils";
+import {
+  formatCurrency,
+  formatDate,
+  normalizeHexColor,
+  readImageFileAsDataUrl,
+  validateBrandLogoFile,
+} from "../invoice/utils";
+import DocumentWatermark from "../shared/DocumentWatermark";
 import { RECEIPT_PAGE_LAYOUT } from "./constants";
 import ReceiptDocument from "./ReceiptDocument";
 import ReceiptToolbar from "./ReceiptToolbar";
@@ -69,7 +76,7 @@ function applyTemporaryScaleForOutput(
 
 export default function ReceiptGenerator() {
   const router = useRouter();
-  const { invoiceDraft } = useInvoiceSession();
+  const { invoiceDraft, setInvoiceDraft } = useInvoiceSession();
   const [isEditing, setIsEditing] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [receiptDraftOverride, setReceiptDraftOverride] =
@@ -124,6 +131,34 @@ export default function ReceiptGenerator() {
         [field]: value,
       };
     });
+  };
+
+  const updateBrandColor = (value: string): void => {
+    setInvoiceDraft((prev) =>
+      prev ? { ...prev, brandColor: normalizeHexColor(value) } : prev,
+    );
+  };
+
+  const updateBrandLogo = async (file: File): Promise<void> => {
+    const validationError = validateBrandLogoFile(file);
+    if (validationError) {
+      window.alert(validationError);
+      return;
+    }
+
+    try {
+      const logoDataUrl = await readImageFileAsDataUrl(file);
+      setInvoiceDraft((prev) =>
+        prev ? { ...prev, brandLogoDataUrl: logoDataUrl } : prev,
+      );
+    } catch (error) {
+      console.error(error);
+      window.alert("Gagal membaca file logo.");
+    }
+  };
+
+  const clearBrandLogo = (): void => {
+    setInvoiceDraft((prev) => (prev ? { ...prev, brandLogoDataUrl: "" } : prev));
   };
 
   const handleManualPrint = () => {
@@ -198,8 +233,13 @@ export default function ReceiptGenerator() {
         terminLabel={receipt.terminLabel}
         terminPercent={receipt.terminPercent}
         toolbarWidthMm={RECEIPT_PAGE_LAYOUT.widthMm}
+        brandColor={invoiceDraft.brandColor}
+        hasBrandLogo={invoiceDraft.brandLogoDataUrl.trim().length > 0}
         onToggleEdit={() => setIsEditing((prev) => !prev)}
         onBackToInvoice={() => router.push("/invoice")}
+        onBrandColorChange={updateBrandColor}
+        onBrandLogoUpload={updateBrandLogo}
+        onBrandLogoClear={clearBrandLogo}
         onManualPrint={handleManualPrint}
       />
 
@@ -215,14 +255,23 @@ export default function ReceiptGenerator() {
             flexShrink: 0,
           }}
         >
-          <ReceiptDocument
-            receipt={receipt}
-            paymentInfo={paymentInfo}
-            isEditing={isEditing}
-            formatCurrency={formatCurrencyValue}
-            formatDate={formatDate}
-            onFieldChange={updateField}
+          <DocumentWatermark
+            accentColor={invoiceDraft.brandColor}
+            label="KWITANSI"
+            logoDataUrl={invoiceDraft.brandLogoDataUrl}
           />
+
+          <div className="relative z-10 min-h-full">
+            <ReceiptDocument
+              receipt={receipt}
+              paymentInfo={paymentInfo}
+              isEditing={isEditing}
+              accentColor={invoiceDraft.brandColor}
+              formatCurrency={formatCurrencyValue}
+              formatDate={formatDate}
+              onFieldChange={updateField}
+            />
+          </div>
         </div>
       </div>
 

@@ -25,6 +25,8 @@ export interface InvoiceData {
   bankName: BankName;
   accountNumber: string;
   recipientName: string;
+  brandColor: string;
+  brandLogoDataUrl: string;
   items: InvoiceItem[];
   dpPercent: number;
   terminNumber: number;
