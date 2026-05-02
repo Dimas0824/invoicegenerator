@@ -1,4 +1,4 @@
-import { Download, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 
 import { formatPercentage } from "../invoice/utils";
 
@@ -11,7 +11,6 @@ type ReceiptToolbarProps = {
   onToggleEdit: () => void;
   onBackToInvoice: () => void;
   onManualPrint: () => void;
-  onDownloadPdf: () => void;
 };
 
 export default function ReceiptToolbar({
@@ -23,7 +22,6 @@ export default function ReceiptToolbar({
   onToggleEdit,
   onBackToInvoice,
   onManualPrint,
-  onDownloadPdf,
 }: ReceiptToolbarProps) {
   return (
     <div
@@ -32,7 +30,9 @@ export default function ReceiptToolbar({
     >
       <div>
         <h1 className="text-lg font-bold text-gray-800">Kwitansi Penerimaan Dana</h1>
-        <p className="text-xs text-gray-500">Format legal standar Indonesia.</p>
+        <p className="text-xs text-gray-500">
+          Gunakan print dialog untuk cetak atau simpan sebagai PDF.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -61,24 +61,14 @@ export default function ReceiptToolbar({
           disabled={isGenerating}
           className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-700 bg-white border-2 border-gray-800 rounded hover:bg-gray-50 transition"
         >
-          <Printer size={16} /> Print Manual
+          <Printer size={16} /> Cetak / Simpan PDF
         </button>
 
-        <button
-          onClick={onDownloadPdf}
-          disabled={isGenerating}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold text-white rounded shadow-sm transition ${
-            isGenerating ? "bg-gray-500 cursor-wait" : "bg-red-600 hover:bg-red-700"
-          }`}
-        >
-          {isGenerating ? (
-            "Memproses..."
-          ) : (
-            <>
-              <Download size={16} /> Download PDF (Auto)
-            </>
-          )}
-        </button>
+        {isGenerating ? (
+          <span className="px-3 py-2 text-xs font-bold text-gray-600 bg-gray-100 rounded border border-gray-300">
+            Menyiapkan layout...
+          </span>
+        ) : null}
       </div>
     </div>
   );

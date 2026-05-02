@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 
 import { INITIAL_INVOICE_STATE } from "./constants";
@@ -28,39 +27,10 @@ import {
   normalizeTerminNumber,
 } from "./utils";
 
-const UNSUPPORTED_COLOR_FUNCTION_PATTERN =
-  /\b(?:lab|lch|oklab|oklch|color)\(/i;
 const OUTPUT_SAFE_SCALE_MARGIN = 0.97;
 
 type LegacyInvoiceData = Partial<InvoiceData> & {
   dpValue?: number;
-};
-
-type CssVarStyle = CSSProperties & Record<`--${string}`, string>;
-
-const PDF_SAFE_TAILWIND_COLOR_VARS: CssVarStyle = {
-  "--color-white": "#ffffff",
-  "--color-gray-50": "#f9fafb",
-  "--color-gray-100": "#f3f4f6",
-  "--color-gray-200": "#e5e7eb",
-  "--color-gray-300": "#d1d5db",
-  "--color-gray-500": "#6b7280",
-  "--color-gray-600": "#4b5563",
-  "--color-gray-700": "#374151",
-  "--color-gray-800": "#1f2937",
-  "--color-gray-900": "#111827",
-  "--color-blue-50": "#eff6ff",
-  "--color-blue-100": "#dbeafe",
-  "--color-blue-200": "#bfdbfe",
-  "--color-blue-500": "#3b82f6",
-  "--color-blue-600": "#2563eb",
-  "--color-blue-700": "#1d4ed8",
-  "--color-red-50": "#fef2f2",
-  "--color-red-400": "#f87171",
-  "--color-red-600": "#dc2626",
-  "--color-red-700": "#b91c1c",
-  "--color-slate-800": "#1e293b",
-  "--color-slate-900": "#0f172a",
 };
 
 const PAGE_SIZE_DIMENSIONS: Record<
@@ -68,14 +38,13 @@ const PAGE_SIZE_DIMENSIONS: Record<
   {
     widthMm: number;
     heightMm: number;
-    jsPdfFormat: "a5" | "a4" | "a3" | "letter" | "legal";
   }
 > = {
-  A5: { widthMm: 148, heightMm: 210, jsPdfFormat: "a5" },
-  A4: { widthMm: 210, heightMm: 297, jsPdfFormat: "a4" },
-  A3: { widthMm: 297, heightMm: 420, jsPdfFormat: "a3" },
-  Letter: { widthMm: 216, heightMm: 279, jsPdfFormat: "letter" },
-  Legal: { widthMm: 216, heightMm: 356, jsPdfFormat: "legal" },
+  A5: { widthMm: 148, heightMm: 210 },
+  A4: { widthMm: 210, heightMm: 297 },
+  A3: { widthMm: 297, heightMm: 420 },
+  Letter: { widthMm: 216, heightMm: 279 },
+  Legal: { widthMm: 216, heightMm: 356 },
 };
 
 function normalizeInvoiceData(draft: LegacyInvoiceData | null): InvoiceData {
@@ -97,49 +66,6 @@ function normalizeInvoiceData(draft: LegacyInvoiceData | null): InvoiceData {
       draft.terminPercent ?? INITIAL_INVOICE_STATE.terminPercent,
     ),
   };
-}
-
-function syncComputedStylesForPdf(
-  sourceRoot: HTMLElement,
-  cloneRoot: HTMLElement,
-): void {
-  const sourceNodes = [
-    sourceRoot,
-    ...Array.from(sourceRoot.querySelectorAll<HTMLElement>("*")),
-  ];
-  const cloneNodes = [
-    cloneRoot,
-    ...Array.from(cloneRoot.querySelectorAll<HTMLElement>("*")),
-  ];
-  const nodeCount = Math.min(sourceNodes.length, cloneNodes.length);
-
-  for (let index = 0; index < nodeCount; index += 1) {
-    const sourceStyle = window.getComputedStyle(sourceNodes[index]);
-    const targetStyle = cloneNodes[index].style;
-
-    for (const styleProp of Array.from(sourceStyle)) {
-      if (styleProp.startsWith("--")) {
-        continue;
-      }
-
-      const computedValue = sourceStyle.getPropertyValue(styleProp);
-      if (!computedValue || UNSUPPORTED_COLOR_FUNCTION_PATTERN.test(computedValue)) {
-        continue;
-      }
-
-      const priority = sourceStyle.getPropertyPriority(styleProp);
-      if (priority) {
-        targetStyle.setProperty(styleProp, computedValue, priority);
-      } else {
-        targetStyle.setProperty(styleProp, computedValue);
-      }
-    }
-  }
-}
-
-function stripStylesheetsInClone(clonedDocument: Document): void {
-  const styleNodes = clonedDocument.querySelectorAll('style, link[rel="stylesheet"]');
-  styleNodes.forEach((node) => node.remove());
 }
 
 function getAutoScaleForOutput(
@@ -177,7 +103,7 @@ function applyTemporaryScaleForOutput(
   const previousMarginRight = element.style.marginRight;
   const scaledHeight = element.scrollHeight * scale;
 
-  element.style.transformOrigin = "top center";
+  element.style.transformOrigin = "top left";
   element.style.transform = `scale(${scale})`;
   element.style.height = `${scaledHeight}px`;
   element.style.minHeight = `${scaledHeight}px`;
@@ -203,9 +129,6 @@ export default function InvoiceGenerator() {
     () => normalizeInvoiceData(invoiceDraft),
   );
   const [isEditing, setIsEditing] = useState(true);
-  const [isPdfReady, setIsPdfReady] = useState(
-    () => typeof window !== "undefined" && Boolean(window.html2pdf),
-  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [paperSize, setPaperSize] = useState<PaperSize>("A4");
   const [pageOrientation, setPageOrientation] = useState<PageOrientation>("portrait");
@@ -214,46 +137,6 @@ export default function InvoiceGenerator() {
   useEffect(() => {
     setInvoiceDraft(invoice);
   }, [invoice, setInvoiceDraft]);
-
-  useEffect(() => {
-    if (window.html2pdf) {
-      return;
-    }
-
-    const existingScript = document.getElementById(
-      "html2pdf-script",
-    ) as HTMLScriptElement | null;
-
-    if (existingScript) {
-      const markReady = () => setIsPdfReady(true);
-      existingScript.addEventListener("load", markReady);
-
-      return () => {
-        existingScript.removeEventListener("load", markReady);
-      };
-    }
-
-    const script = document.createElement("script");
-    script.id = "html2pdf-script";
-    script.src =
-      "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-    script.async = true;
-
-    const markReady = () => setIsPdfReady(true);
-    const markError = () => {
-      console.error("Gagal memuat library PDF");
-      setIsPdfReady(false);
-    };
-
-    script.addEventListener("load", markReady);
-    script.addEventListener("error", markError);
-    document.body.appendChild(script);
-
-    return () => {
-      script.removeEventListener("load", markReady);
-      script.removeEventListener("error", markError);
-    };
-  }, []);
 
   const subtotal = useMemo(() => calculateSubtotal(invoice.items), [invoice.items]);
   const dpAmount = useMemo(
@@ -282,7 +165,6 @@ export default function InvoiceGenerator() {
       heightMm,
       horizontalPaddingMm,
       verticalPaddingMm,
-      jsPdfFormat: base.jsPdfFormat,
     };
   }, [paperSize, pageOrientation]);
 
@@ -342,78 +224,9 @@ export default function InvoiceGenerator() {
     }));
   };
 
-  const handleDownloadPDF = () => {
-    const createPdf = window.html2pdf;
-    if (!createPdf || !isPdfReady) {
-      window.alert("Library PDF belum siap. Silakan gunakan tombol Manual Print.");
-      return;
-    }
-
-    const element = contentRef.current;
-    if (!element) {
-      window.alert("Konten invoice tidak ditemukan.");
-      return;
-    }
-
-    setIsGenerating(true);
-    const wasEditing = isEditing;
-    setIsEditing(false);
-
-    window.setTimeout(() => {
-      const outputScale = getAutoScaleForOutput(
-        element,
-        pageLayout.widthMm,
-        pageLayout.heightMm,
-      );
-      const restoreScaledStyle = applyTemporaryScaleForOutput(element, outputScale);
-
-      const options = {
-        margin: 0,
-        filename: `Invoice-${invoice.orderId}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          scrollY: 0,
-          scrollX: 0,
-          onclone: (clonedDocument: Document) => {
-            const cloneElement = clonedDocument.getElementById("invoice-content");
-            if (!(cloneElement instanceof HTMLElement)) {
-              return;
-            }
-
-            syncComputedStylesForPdf(element, cloneElement);
-            stripStylesheetsInClone(clonedDocument);
-          },
-        },
-        jsPDF: {
-          unit: "mm",
-          format: pageLayout.jsPdfFormat,
-          orientation: pageOrientation,
-        },
-      };
-
-      createPdf()
-        .set(options)
-        .from(element)
-        .save()
-        .then(() => {
-          restoreScaledStyle();
-          setIsEditing(wasEditing);
-          setIsGenerating(false);
-        })
-        .catch((error: unknown) => {
-          console.error("PDF Error:", error);
-          window.alert("Gagal download otomatis. Gunakan tombol Manual.");
-          restoreScaledStyle();
-          setIsEditing(wasEditing);
-          setIsGenerating(false);
-        });
-    }, 800);
-  };
-
   const handleManualPrint = () => {
     const wasEditing = isEditing;
+    setIsGenerating(true);
     setIsEditing(false);
 
     window.setTimeout(() => {
@@ -421,6 +234,7 @@ export default function InvoiceGenerator() {
       if (!element) {
         window.alert("Konten invoice tidak ditemukan.");
         setIsEditing(wasEditing);
+        setIsGenerating(false);
         return;
       }
 
@@ -430,16 +244,32 @@ export default function InvoiceGenerator() {
         pageLayout.heightMm,
       );
       const restoreScaledStyle = applyTemporaryScaleForOutput(element, outputScale);
+
+      // Native print keeps the same browser-rendered CSS as the preview, avoiding
+      // cloned-DOM styling differences that caused inconsistent PDF layouts.
+      let hasRestoredPrintState = false;
+      const restoreAfterPrint = () => {
+        if (hasRestoredPrintState) {
+          return;
+        }
+
+        hasRestoredPrintState = true;
+        restoreScaledStyle();
+        setIsEditing(wasEditing);
+        setIsGenerating(false);
+        window.removeEventListener("afterprint", restoreAfterPrint);
+      };
+
+      window.addEventListener("afterprint", restoreAfterPrint);
       window.print();
-      restoreScaledStyle();
-      setIsEditing(wasEditing);
+
+      window.setTimeout(restoreAfterPrint, 1000);
     }, 500);
   };
 
   return (
     <div
       className="min-h-screen bg-gray-200 font-sans p-3 flex flex-col items-center"
-      style={PDF_SAFE_TAILWIND_COLOR_VARS}
     >
       <Toolbar
         isEditing={isEditing}
@@ -452,14 +282,11 @@ export default function InvoiceGenerator() {
         onPaperSizeChange={(value) => setPaperSize(value)}
         onPageOrientationChange={(value) => setPageOrientation(value)}
         onManualPrint={handleManualPrint}
-        onDownloadPdf={handleDownloadPDF}
         onOpenReceiptPage={() => router.push("/kwitansi")}
       />
 
       <div
-        className={`overflow-auto w-full flex pb-10 print:pb-0 transition-all duration-200 ${
-          isGenerating ? "justify-start pl-0" : "justify-center"
-        }`}
+        className="overflow-auto w-full flex justify-center pb-10 print:pb-0 transition-all duration-200"
       >
         <div
           ref={contentRef}
@@ -553,8 +380,18 @@ export default function InvoiceGenerator() {
 
           body {
             background: white;
+            margin: 0 !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+
+          body * {
+            visibility: hidden;
+          }
+
+          #invoice-content,
+          #invoice-content * {
+            visibility: visible;
           }
 
           .print\\:hidden { display: none !important; }
@@ -562,10 +399,14 @@ export default function InvoiceGenerator() {
           .print\\:pb-0 { padding-bottom: 0 !important; }
 
           #invoice-content {
+            position: absolute !important;
+            inset: 0 auto auto 0 !important;
             width: ${pageLayout.widthMm}mm !important;
             min-height: ${pageLayout.heightMm}mm !important;
             margin: 0 !important;
             padding: ${pageLayout.verticalPaddingMm}mm ${pageLayout.horizontalPaddingMm}mm !important;
+            background: white !important;
+            color: #0f172a !important;
             page-break-after: avoid;
           }
         }

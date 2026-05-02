@@ -3,5 +3,4 @@ export const RECEIPT_PAGE_LAYOUT = {
   heightMm: 297,
   horizontalPaddingMm: 12,
   verticalPaddingMm: 10,
-  jsPdfFormat: "a4" as const,
 };
